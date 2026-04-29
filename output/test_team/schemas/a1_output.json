@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A1 Test Runner Output",
+  "type": "object",
+  "required": ["test_id", "overall_pass", "suites", "server_log_path"],
+  "properties": {
+    "test_id": { "type": "string" },
+    "overall_pass": { "type": "boolean", "description": "所有測試套件全部通過才為 true" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "duration_seconds": { "type": "number" },
+    "server_startup_ok": { "type": "boolean" },
+    "frontend_load_ok": { "type": "boolean" },
+    "suites": {
+      "type": "object",
+      "required": ["pytest", "playwright", "api", "websocket", "smoke"],
+      "properties": {
+        "smoke": {
+          "type": "object",
+          "required": ["pass", "health_endpoint", "index_html"],
+          "properties": {
+            "pass": { "type": "boolean" },
+            "health_endpoint": { "type": "boolean" },
+            "index_html": { "type": "boolean" },
+            "frontend_files_checked": { "type": "integer" },
+            "frontend_files_missing": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "pytest": {
+          "type": "object",
+          "required": ["pass", "total", "passed", "failed", "errors"],
+          "properties": {
+            "pass": { "type": "boolean" },
+            "total": { "type": "integer" },
+            "passed": { "type": "integer" },
+            "failed": { "type": "integer" },
+            "errors": { "type": "integer" },
+            "duration_seconds": { "type": "number" },
+            "failures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["test_name", "error_type", "error_message"],
+                "properties": {
+                  "test_name": { "type": "string" },
+                  "error_type": { "type": "string" },
+                  "error_message": { "type": "string" },
+                  "traceback": { "type": "string" },
+                  "likely_root_cause": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "playwright": {
+          "type": "object",
+          "required": ["pass", "scenarios_total", "scenarios_passed"],
+          "properties": {
+            "pass": { "type": "boolean" },
+            "scenarios_total": { "type": "integer" },
+            "scenarios_passed": { "type": "integer" },
+            "scenarios_failed": { "type": "integer" },
+            "duration_seconds": { "type": "number" },
+            "failures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["scenario", "step", "error"],
+                "properties": {
+                  "scenario": { "type": "string" },
+                  "step": { "type": "string" },
+                  "error": { "type": "string" },
+                  "screenshot_path": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "api": {
+          "type": "object",
+          "required": ["pass", "endpoints_tested", "endpoints_passed"],
+          "properties": {
+            "pass": { "type": "boolean" },
+            "endpoints_tested": { "type": "integer" },
+            "endpoints_passed": { "type": "integer" },
+            "schema_validation": {
+              "type": "object",
+              "description": "實際 API 回應欄位驗證",
+              "properties": {
+                "new_session_fields": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "POST /api/game/new 實際回傳欄位清單"
+                },
+                "expected_fields_match": { "type": "boolean" },
+                "missing_fields": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "failures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["endpoint", "method", "status_code", "error"],
+                "properties": {
+                  "endpoint": { "type": "string" },
+                  "method": { "type": "string", "enum": ["GET", "POST", "WS"] },
+                  "expected_status": { "type": "integer" },
+                  "actual_status": { "type": "integer" },
+                  "response_body": { "type": "string" },
+                  "error": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "websocket": {
+          "type": "object",
+          "required": ["pass", "connection_ok", "streaming_ok", "state_update_ok"],
+          "properties": {
+            "pass": { "type": "boolean" },
+            "connection_ok": { "type": "boolean" },
+            "streaming_ok": { "type": "boolean" },
+            "state_update_ok": { "type": "boolean" },
+            "tokens_received": { "type": "integer" },
+            "errors": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "server_log_path": { "type": "string" },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

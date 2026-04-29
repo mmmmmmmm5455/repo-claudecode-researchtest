@@ -1,0 +1,119 @@
+{
+  "game": {
+    "name": "千禧年蟲事件",
+    "source_dir": "C:/Users/qwqwh/.claude/projects/multi-agent-plan/output",
+    "story_engine_source": "C:/Users/qwqwh/.claude/projects/ai-text-adventure",
+    "port": 8765,
+    "host": "127.0.0.1",
+    "target_url": "http://localhost:8765"
+  },
+  "llm": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-pro",
+    "base_url": "https://api.deepseek.com/anthropic",
+    "env_api_key": "ANTHROPIC_API_KEY",
+    "env_base_url": "ANTHROPIC_BASE_URL",
+    "env_model": "ANTHROPIC_MODEL"
+  },
+  "orchestrator": {
+    "default_mode": "full_cycle",
+    "max_cycles": 5,
+    "auto_commit": false,
+    "cache_dir": ".test_team_cache",
+    "backup_dir": ".test_team_cache/backups",
+    "reports_dir": "reports",
+    "schemas_dir": "schemas"
+  },
+  "agents": {
+    "a1_test_runner": {
+      "timeout_seconds": 120,
+      "retry_failed": 1,
+      "start_server": true,
+      "stop_server_after": false
+    },
+    "a2_bug_hunter": {
+      "hunt_depth": "standard",
+      "max_bugs_to_report": 50
+    },
+    "a3_bug_fixer": {
+      "max_files_to_touch_per_bug": 3,
+      "forbidden_files": ["engine/story_engine.py", "game/game_state.py"],
+      "dry_run": false
+    },
+    "a4_performance": {
+      "duration_seconds": 60,
+      "concurrent_users": 1,
+      "sample_rate": 10
+    },
+    "a5_ux_evaluator": {
+      "browser": "chromium",
+      "headless": true,
+      "viewport_width": 1280,
+      "viewport_height": 720,
+      "screenshot_on_failure": true
+    },
+    "a6_regression_guard": {
+      "screenshot_diff_tolerance_pct": 2.0
+    },
+    "a7_content_reviewer": {
+      "sample_size": 10,
+      "review_aspects": ["narrative", "localization", "length", "balance", "scenes"],
+      "seed_inputs": ["看看四周", "向前走", "檢查終端機", "觸碰螢幕", "打開門", "回憶過去", "尋找出口", "對話", "等待", "觸碰光源"]
+    }
+  },
+  "thresholds": {
+    "performance": {
+      "api_health_p50_ms_max": 10,
+      "api_health_p50_warn": 50,
+      "api_action_p95_ms_max": 5000,
+      "api_action_p95_warn": 10000,
+      "api_state_p50_ms_max": 20,
+      "api_new_p50_ms_max": 500,
+      "ws_token_interval_ms_max": 100,
+      "ws_connect_time_ms_max": 2000,
+      "frontend_avg_fps_min": 30,
+      "frontend_min_fps_min": 15,
+      "scene_switch_latency_ms_max": 4000,
+      "python_memory_mb_max": 200,
+      "session_file_size_kb_max": 50,
+      "session_file_count_max": 100
+    },
+    "ux": {
+      "crt_opacity_min": 0.35,
+      "crt_opacity_max": 0.45,
+      "typewriter_speed_min_ms": 30,
+      "typewriter_speed_max_ms": 50,
+      "scene_crossfade_seconds": 3.0,
+      "crossfade_tolerance": 0.5
+    },
+    "css_palette": [
+      "#0A0D14", "#003344", "#1A2530", "#2A3540",
+      "#33FF33", "#1A8C1A", "#8B4513", "#88CCFF",
+      "#1A1025", "#8B0000", "#C0C0C0", "#708090"
+    ],
+    "content": {
+      "narrative_max_words": 300,
+      "narrative_over_limit_ratio_max": 0.3,
+      "overall_score_pass": 60
+    }
+  },
+  "gates": {
+    "G1_test_baseline": "pytest 29/29 + all suites pass",
+    "G2_api_integrity": "4 endpoints respond with valid schema",
+    "G3_css_compliance": "Q1-Q9 all pass",
+    "G4_no_regression": "A6 gate_pass == true",
+    "G5_performance_floor": "A4 overall_health != critical",
+    "G6_fix_forward": "bugs_remaining decreases each cycle"
+  },
+  "paths": {
+    "python": "python",
+    "pip": "pip",
+    "uvicorn": "python -m uvicorn",
+    "playwright": "npx playwright",
+    "pytest": "pytest",
+    "git": "git",
+    "curl": "curl",
+    "grep": "grep",
+    "bash": "bash"
+  }
+}

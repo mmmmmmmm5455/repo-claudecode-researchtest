@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A5 UX Evaluator Input",
+  "type": "object",
+  "required": ["eval_id"],
+  "properties": {
+    "eval_id": { "type": "string" },
+    "target_url": { "type": "string", "default": "http://localhost:8765" },
+    "checks_to_run": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["Q1","Q2","Q3","Q4","Q5","Q6","Q7","Q8","Q9","Q10","Q11","Q12","Q13","Q14","Q15","Q16","Q17"] },
+      "default": ["Q1","Q2","Q3","Q4","Q5","Q6","Q7","Q8","Q9","Q10","Q11","Q12","Q13","Q14","Q15","Q16","Q17"]
+    },
+    "browser": { "type": "string", "default": "chromium", "enum": ["chromium", "firefox", "webkit"] },
+    "headless": { "type": "boolean", "default": true },
+    "screenshot_on_failure": { "type": "boolean", "default": true },
+    "viewport_width": { "type": "integer", "default": 1280 },
+    "viewport_height": { "type": "integer", "default": 720 },
+    "game_source_dir": { "type": "string" }
+  }
+}

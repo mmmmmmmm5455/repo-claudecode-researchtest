@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A6 Regression Guard Input",
+  "type": "object",
+  "required": ["guard_id", "fix_output_path", "pre_fix_test_output_path"],
+  "properties": {
+    "guard_id": { "type": "string" },
+    "fix_output_path": { "type": "string", "description": "A3 輸出 JSON 路徑" },
+    "pre_fix_test_output_path": { "type": "string", "description": "A1 輸出 JSON 路徑（修復前 baseline）" },
+    "changed_files": { "type": "array", "items": { "type": "string" } },
+    "target_url": { "type": "string", "default": "http://localhost:8765" },
+    "screenshot_diff_tolerance_pct": { "type": "number", "default": 2.0 },
+    "game_source_dir": { "type": "string" }
+  }
+}

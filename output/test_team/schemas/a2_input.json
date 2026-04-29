@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A2 Bug Hunter Input",
+  "type": "object",
+  "required": ["hunt_id", "test_output_path"],
+  "properties": {
+    "hunt_id": { "type": "string" },
+    "test_output_path": { "type": "string", "description": "A1 輸出的 JSON 檔案路徑" },
+    "hunt_depth": { "type": "string", "enum": ["quick", "standard", "deep"], "default": "standard" },
+    "focus_areas": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["api", "frontend", "websocket", "state", "css", "performance", "security"] }
+    },
+    "max_bugs_to_report": { "type": "integer", "default": 50 },
+    "target_url": { "type": "string", "default": "http://localhost:8765" },
+    "game_source_dir": { "type": "string" }
+  }
+}

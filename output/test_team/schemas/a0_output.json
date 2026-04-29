@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A0 Orchestrator Output",
+  "type": "object",
+  "required": ["orchestration_id", "status", "cycle_results", "final_report_path"],
+  "properties": {
+    "orchestration_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["all_clear", "bugs_fixed", "bugs_remain", "critical_issues"]
+    },
+    "cycles_completed": { "type": "integer" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "total_duration_seconds": { "type": "number" },
+    "summary": {
+      "type": "object",
+      "required": ["tests_passed", "bugs_found", "bugs_fixed", "bugs_remaining", "qa_checks_passed"],
+      "properties": {
+        "tests_passed": { "type": "integer" },
+        "tests_total": { "type": "integer" },
+        "bugs_found": { "type": "integer" },
+        "bugs_fixed": { "type": "integer" },
+        "bugs_remaining": { "type": "integer" },
+        "bugs_unfixable": { "type": "integer" },
+        "qa_checks_passed": { "type": "integer" },
+        "qa_checks_total": { "type": "integer" },
+        "performance_health": { "type": "string", "enum": ["good", "warning", "critical"] },
+        "content_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "files_changed": { "type": "integer" },
+        "regressions_caught": { "type": "integer" }
+      }
+    },
+    "cycle_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cycle_number", "agents_triggered"],
+        "properties": {
+          "cycle_number": { "type": "integer" },
+          "agents_triggered": { "type": "array", "items": { "type": "string" } },
+          "bugs_fixed_this_cycle": { "type": "integer" },
+          "regression_detected": { "type": "boolean" },
+          "duration_seconds": { "type": "number" },
+          "gates_status": {
+            "type": "object",
+            "properties": {
+              "G1_test_baseline": { "type": "boolean" },
+              "G2_api_integrity": { "type": "boolean" },
+              "G3_css_compliance": { "type": "boolean" },
+              "G4_no_regression": { "type": "boolean" },
+              "G5_performance_floor": { "type": "boolean" },
+              "G6_fix_forward": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "final_report_path": { "type": "string" },
+    "git_commit_hash": { "type": "string" },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

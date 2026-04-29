@@ -1,0 +1,20 @@
+# Logs (may contain tokens / sensitive output)
+*.log
+pipeline.jsonl
+logs/
+
+# Agent caches (runtime only)
+.test_team_cache/
+game_sessions/
+.cache/
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Reports (keep templates, ignore generated)
+quality_report.json

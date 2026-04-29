@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A6 Regression Guard Output",
+  "type": "object",
+  "required": ["guard_id", "regression_detected", "gate_pass"],
+  "properties": {
+    "guard_id": { "type": "string" },
+    "regression_detected": { "type": "boolean" },
+    "gate_pass": { "type": "boolean" },
+    "pytest_rerun": {
+      "type": "object",
+      "required": ["current_pass_count", "new_failures"],
+      "properties": {
+        "previous_pass_count": { "type": "integer" },
+        "previous_fail_count": { "type": "integer" },
+        "current_pass_count": { "type": "integer" },
+        "current_fail_count": { "type": "integer" },
+        "new_failures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["test_name", "error_message"],
+            "properties": {
+              "test_name": { "type": "string" },
+              "error_message": { "type": "string" },
+              "caused_by_fix": { "type": "boolean" },
+              "related_bug_id": { "type": "string" }
+            }
+          }
+        },
+        "resolved_failures": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "api_diff": {
+      "type": "object",
+      "required": ["breaking_changes", "non_breaking_changes"],
+      "properties": {
+        "breaking_changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["endpoint", "change_type", "detail"],
+            "properties": {
+              "endpoint": { "type": "string" },
+              "change_type": { "type": "string", "enum": ["field_removed", "field_type_changed", "status_code_changed", "response_structure_changed"] },
+              "detail": { "type": "string" }
+            }
+          }
+        },
+        "non_breaking_changes": { "type": "array", "items": { "type": "string" } },
+        "unchanged": { "type": "boolean" }
+      }
+    },
+    "css_screenshot_diff": {
+      "type": "object",
+      "required": ["pixel_diff_percent", "pass"],
+      "properties": {
+        "pixel_diff_percent": { "type": "number" },
+        "pass": { "type": "boolean" },
+        "regions_changed": { "type": "array", "items": { "type": "string" } },
+        "pre_fix_screenshot": { "type": "string" },
+        "post_fix_screenshot": { "type": "string" },
+        "diff_screenshot": { "type": "string" }
+      }
+    },
+    "blocked_fixes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["bug_id", "reason"],
+        "properties": {
+          "bug_id": { "type": "string" },
+          "reason": { "type": "string" },
+          "failed_gate": { "type": "string", "enum": ["pytest", "api_diff", "css_diff"] }
+        }
+      }
+    },
+    "verified_fixes": { "type": "array", "items": { "type": "string" } }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A3 Bug Fixer Input",
+  "type": "object",
+  "required": ["fix_id", "bugs"],
+  "properties": {
+    "fix_id": { "type": "string" },
+    "bugs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["bug_id", "severity", "auto_fixable"],
+        "properties": {
+          "bug_id": { "type": "string" },
+          "severity": { "type": "string" },
+          "category": { "type": "string" },
+          "affected_files": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": "string" },
+          "suggested_fix": { "type": "string" },
+          "auto_fixable": { "type": "boolean" }
+        }
+      }
+    },
+    "game_source_dir": { "type": "string" },
+    "max_files_to_touch_per_bug": { "type": "integer", "default": 3 },
+    "dry_run": { "type": "boolean", "default": false },
+    "forbidden_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["engine/story_engine.py", "game/game_state.py"]
+    }
+  }
+}

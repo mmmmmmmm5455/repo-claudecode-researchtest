@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A4 Performance Profiler Output",
+  "type": "object",
+  "required": ["profile_id", "overall_health", "metrics", "bottlenecks"],
+  "properties": {
+    "profile_id": { "type": "string" },
+    "overall_health": { "type": "string", "enum": ["good", "warning", "critical"] },
+    "sampled_at": { "type": "string", "format": "date-time" },
+    "duration_seconds": { "type": "number" },
+    "metrics": {
+      "type": "object",
+      "required": ["api_latency", "websocket", "frontend", "memory"],
+      "properties": {
+        "api_latency": {
+          "type": "object",
+          "required": ["health_p50_ms", "action_p95_ms", "state_p50_ms", "new_p50_ms"],
+          "properties": {
+            "health_p50_ms": { "type": "number" },
+            "health_p95_ms": { "type": "number" },
+            "health_p99_ms": { "type": "number" },
+            "action_p50_ms": { "type": "number" },
+            "action_p95_ms": { "type": "number" },
+            "action_p99_ms": { "type": "number" },
+            "state_p50_ms": { "type": "number" },
+            "new_p50_ms": { "type": "number" }
+          }
+        },
+        "websocket": {
+          "type": "object",
+          "required": ["avg_token_interval_ms", "connection_time_ms"],
+          "properties": {
+            "avg_token_interval_ms": { "type": "number" },
+            "p95_token_interval_ms": { "type": "number" },
+            "connection_time_ms": { "type": "number" },
+            "tokens_per_second": { "type": "number" }
+          }
+        },
+        "frontend": {
+          "type": "object",
+          "required": ["avg_fps", "min_fps"],
+          "properties": {
+            "avg_fps": { "type": "number" },
+            "min_fps": { "type": "number" },
+            "scene_fps": { "type": "object", "additionalProperties": { "type": "number" } },
+            "scene_switch_latency_ms": { "type": "number" }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "required": ["python_memory_mb", "session_files_count", "total_session_size_kb"],
+          "properties": {
+            "python_memory_mb": { "type": "number" },
+            "session_files_count": { "type": "integer" },
+            "total_session_size_kb": { "type": "number" },
+            "avg_session_size_kb": { "type": "number" }
+          }
+        }
+      }
+    },
+    "bottlenecks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["component", "severity", "metric", "current_value", "threshold", "suggestion"],
+        "properties": {
+          "component": { "type": "string" },
+          "severity": { "type": "string", "enum": ["critical", "warning"] },
+          "metric": { "type": "string" },
+          "current_value": { "type": "number" },
+          "threshold": { "type": "number" },
+          "unit": { "type": "string" },
+          "suggestion": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
-/* api.js — HTTP fetch + WebSocket communication layer
- * Exports: sendAction(), connectWebSocket(), getGameState()
- * CRITICAL: No import/require statements (pure browser execution)
+/* api.js - HTTP fetch + WebSocket communication layer
+ * Exports on window.GameAPI: sendAction(), connectWebSocket(), getGameState(), newSession()
+ * NO import/require - pure browser execution, loaded via <script> tag
  */
 (function () {
   'use strict';
@@ -21,9 +21,19 @@
     return res.json();
   }
 
+  async function newSession() {
+    var res = await fetch(BASE + '/api/game/new', { method: 'POST' });
+    if (!res.ok) throw new Error('New session error ' + res.status);
+    return res.json();
+  }
+
   async function getGameState(sessionId) {
     var res = await fetch(BASE + '/api/game/state?session_id=' + encodeURIComponent(sessionId));
-    if (!res.ok) throw new Error('State fetch error ' + res.status);
+    if (!res.ok) {
+      var detail = '';
+      try { var e = await res.json(); detail = e.detail || ''; } catch (_) {}
+      throw new Error(detail || 'State fetch error ' + res.status);
+    }
     return res.json();
   }
 
@@ -43,7 +53,7 @@
       } else if (data.type === 'state_update' && callbacks.onStateUpdate) {
         callbacks.onStateUpdate(data);
       } else if (data.type === 'error' && callbacks.onError) {
-        callbacks.onError(data.error);
+        callbacks.onError(data.error || 'Unknown server error');
       }
     };
 
@@ -51,11 +61,16 @@
       if (callbacks.onError) callbacks.onError('WebSocket connection error');
     };
 
+    ws.onclose = function () {
+      if (callbacks.onClose) callbacks.onClose();
+    };
+
     return ws;
   }
 
   window.GameAPI = {
     sendAction: sendAction,
+    newSession: newSession,
     connectWebSocket: connectWebSocket,
     getGameState: getGameState,
   };

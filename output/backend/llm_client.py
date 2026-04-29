@@ -77,7 +77,8 @@ class AsyncLLMClient:
             system=system or "",
             messages=messages,
         )
-        return response.content[0].text if response.content else ""
+        text_blocks = [b for b in response.content if hasattr(b, 'text')]
+        return text_blocks[0].text if text_blocks else ""
 
     async def generate_text_stream(
         self,

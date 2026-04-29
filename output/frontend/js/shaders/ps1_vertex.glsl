@@ -2,6 +2,7 @@
  * Simulates PlayStation 1 fixed-point vertex processing artifacts.
  * wobble: sin() based vertex jitter along X axis
  * quantization: floor(xyz * 32) / 32 emulates fixed-point precision loss
+ * uniform uTime: time in seconds for wobble animation
  */
 uniform float uTime;
 varying vec2 vUv;
@@ -9,11 +10,12 @@ varying vec2 vUv;
 void main() {
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
 
-    // Vertex wobble — PS1 signature effect
+    // Vertex wobble — PS1 signature effect (sin-based X-axis jitter)
     float wobble = sin(mvPosition.y * 100.0 + uTime) * 0.3;
     mvPosition.x += wobble;
 
     // Low-precision quantization (fixed-point emulation, 5-bit fraction)
+    // floor(xyz * 32) / 32 — simulates PS1's lack of FPU
     mvPosition.xyz = floor(mvPosition.xyz * 32.0) / 32.0;
 
     gl_Position = projectionMatrix * mvPosition;

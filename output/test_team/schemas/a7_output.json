@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A7 Content Reviewer Output",
+  "type": "object",
+  "required": ["review_id", "overall_score", "narrative_quality", "localization", "narrative_length", "game_balance", "scene_logic"],
+  "properties": {
+    "review_id": { "type": "string" },
+    "overall_score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "samples_generated": { "type": "integer" },
+    "samples_analyzed": { "type": "integer" },
+    "narrative_quality": {
+      "type": "object",
+      "required": ["score", "tone_consistent"],
+      "properties": {
+        "score": { "type": "number" },
+        "tone_consistent": { "type": "boolean" },
+        "y2k_keywords_found": { "type": "integer" },
+        "y2k_keywords_expected": { "type": "integer" },
+        "tone_issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sample_index": { "type": "integer" },
+              "issue": { "type": "string" },
+              "excerpt": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "localization": {
+      "type": "object",
+      "required": ["score", "simplified_chinese_detected"],
+      "properties": {
+        "score": { "type": "number" },
+        "simplified_chinese_detected": { "type": "boolean" },
+        "simplified_char_count": { "type": "integer" },
+        "simplified_examples": { "type": "array", "items": { "type": "string" } },
+        "encoding_issues": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "narrative_length": {
+      "type": "object",
+      "required": ["score", "avg_word_count", "over_limit_count"],
+      "properties": {
+        "score": { "type": "number" },
+        "avg_word_count": { "type": "number" },
+        "min_word_count": { "type": "integer" },
+        "max_word_count": { "type": "integer" },
+        "over_limit_count": { "type": "integer" }
+      }
+    },
+    "game_balance": {
+      "type": "object",
+      "required": ["score", "emotion_progression", "infection_progression", "event_trigger_rate"],
+      "properties": {
+        "score": { "type": "number" },
+        "emotion_progression": {
+          "type": "object",
+          "properties": {
+            "ok": { "type": "boolean" },
+            "initial_value": { "type": "number" },
+            "final_value": { "type": "number" },
+            "range_ok": { "type": "boolean" },
+            "issues": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "infection_progression": {
+          "type": "object",
+          "properties": {
+            "ok": { "type": "boolean" },
+            "progression_rate": { "type": "number" },
+            "never_exceeded_100": { "type": "boolean" },
+            "issues": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "event_trigger_rate": {
+          "type": "object",
+          "properties": {
+            "ok": { "type": "boolean" },
+            "critical_infection_count": { "type": "integer" },
+            "infection_warning_count": { "type": "integer" },
+            "are_you_real_count": { "type": "integer" },
+            "early_trigger_issue": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "scene_logic": {
+      "type": "object",
+      "required": ["score", "transitions_verified", "incorrect_transitions"],
+      "properties": {
+        "score": { "type": "number" },
+        "transitions_verified": { "type": "integer" },
+        "incorrect_transitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "emotion": { "type": "number" },
+              "infection": { "type": "number" },
+              "expected_scene": { "type": "string" },
+              "actual_scene": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

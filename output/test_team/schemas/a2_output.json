@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A2 Bug Hunter Output",
+  "type": "object",
+  "required": ["hunt_id", "bugs_found", "hunt_summary"],
+  "properties": {
+    "hunt_id": { "type": "string" },
+    "hunt_depth_used": { "type": "string" },
+    "strategies_executed": { "type": "array", "items": { "type": "string" } },
+    "bugs_found": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["bug_id", "severity", "category", "description", "reproduction_steps", "auto_fixable"],
+        "properties": {
+          "bug_id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["critical", "high", "medium", "low", "cosmetic"] },
+          "category": { "type": "string", "enum": ["crash", "logic", "ui", "performance", "security", "compliance", "localization", "race_condition", "memory_leak"] },
+          "description": { "type": "string" },
+          "reproduction_steps": { "type": "string" },
+          "affected_files": { "type": "array", "items": { "type": "string" } },
+          "evidence_paths": { "type": "array", "items": { "type": "string" } },
+          "suggested_fix": { "type": "string" },
+          "auto_fixable": { "type": "boolean" },
+          "auto_fixable_reason": { "type": "string" },
+          "source": { "type": "string", "enum": ["test_failure", "edge_exploration", "static_analysis", "state_probe", "file_check"] }
+        }
+      }
+    },
+    "edge_cases_tested": { "type": "integer" },
+    "hunt_summary": {
+      "type": "object",
+      "required": ["total_bugs", "by_severity", "by_category", "auto_fixable_count"],
+      "properties": {
+        "total_bugs": { "type": "integer" },
+        "new_bugs": { "type": "integer" },
+        "by_severity": {
+          "type": "object",
+          "properties": {
+            "critical": { "type": "integer" },
+            "high": { "type": "integer" },
+            "medium": { "type": "integer" },
+            "low": { "type": "integer" },
+            "cosmetic": { "type": "integer" }
+          }
+        },
+        "by_category": { "type": "object" },
+        "auto_fixable_count": { "type": "integer" }
+      }
+    }
+  }
+}

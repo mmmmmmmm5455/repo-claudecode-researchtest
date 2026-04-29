@@ -1,77 +1,214 @@
-/* background.js — Scene manager with crossfade + CRT noise transition
- * Manages 4 liminal space 3D scenes. Exports: BackgroundManager { start, switchScene, getCurrentScene }
+/* background.js — PS1 Scene Manager with post-processing + crossfade + CRT transition
+ * Owns the WebGLRenderer, render targets, and animation loop.
+ * Scenes return { scene, camera, animate, dispose } — NO renderer creation.
+ * Post-processing: scene → low-res RT → PS1 fragment shader → screen.
+ * Crossfade: 3-second blend + CRT noise transition.
+ * Exports: BackgroundManager { start, switchScene, getCurrentScene }
  */
 var BackgroundManager = (function () {
   'use strict';
 
-  var container, renderer, scene, camera;
+  var container, renderer, screenCamera, screenScene, screenMaterial;
+  var sceneRT, prevRT, clock;
   var currentSceneName = null;
   var currentSceneObj = null;
   var animId = null;
+  var transitionActive = false;
+  var transitionStart = 0;
+
+  var fullscreenVert = [
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vUv = uv;',
+    '  gl_Position = vec4(position.xy, 0.0, 1.0);',
+    '}'
+  ].join('\n');
+
+  var postFrag = [
+    'uniform sampler2D uScene;',
+    'uniform sampler2D uPrevScene;',
+    'uniform float uTime;',
+    'uniform float uTransition;',
+    'uniform vec2 uResolution;',
+    'varying vec2 vUv;',
+    'float rand(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898,78.233)))*43758.5453); }',
+    'void main() {',
+    '  vec2 uv = vUv;',
+    '  vec4 color = texture2D(uScene, uv);',
+    '  if (uTransition > 0.0) {',
+    '    vec4 prev = texture2D(uPrevScene, uv);',
+    '    color = mix(prev, color, uTransition);',
+    '  }',
+    '  float sl = sin(uv.y * uResolution.y * 0.7) * 0.03;',
+    '  float ns = rand(uv + floor(uTime*60.0)*0.01) * 0.08;',
+    '  float fl = rand(vec2(floor(uTime*30.0), 0.0)) * 0.05;',
+    '  color.rgb += sl + ns - fl;',
+    '  float rs = rand(vec2(uv.y*100.0, uTime)) * 0.003;',
+    '  color.r = texture2D(uScene, uv + vec2(rs, 0.0)).r;',
+    '  color.rgb = floor(color.rgb * 31.0) / 31.0;',
+    '  float lum = dot(color.rgb, vec3(0.299, 0.587, 0.114));',
+    '  color.rgb = mix(color.rgb, vec3(0.0, 0.2, 0.267), (1.0-lum)*0.6);',
+    '  float band = floor(lum * 16.0) / 16.0;',
+    '  color.rgb += (band - lum) * 0.08;',
+    '  color.rgb *= 1.0 - length(uv - 0.5) * 0.5;',
+    '  gl_FragColor = color;',
+    '}'
+  ].join('\n');
 
   function start(initialScene) {
     container = document.getElementById('bg-container');
     if (!container || typeof THREE === 'undefined') return;
-
+    clock = new THREE.Clock();
     renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(1);
     renderer.domElement.style.position = 'fixed';
     renderer.domElement.style.top = '0';
     renderer.domElement.style.left = '0';
     renderer.domElement.style.zIndex = '0';
     renderer.domElement.style.imageRendering = 'pixelated';
     container.appendChild(renderer.domElement);
-
-    window.addEventListener('resize', function () {
-      if (renderer) {
-        renderer.setSize(window.innerWidth, window.innerHeight);
-                if (currentSceneObj && currentSceneObj.camera) {
-          currentSceneObj.camera.aspect = window.innerWidth / window.innerHeight;
-          currentSceneObj.camera.updateProjectionMatrix();
-        }
-      }
+    var rtW = Math.max(160, Math.floor(window.innerWidth / 4));
+    var rtH = Math.max(120, Math.floor(window.innerHeight / 4));
+    sceneRT = new THREE.WebGLRenderTarget(rtW, rtH, {
+      minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat
     });
-
+    prevRT = new THREE.WebGLRenderTarget(rtW, rtH, {
+      minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat
+    });
+    screenScene = new THREE.Scene();
+    screenCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    screenMaterial = new THREE.ShaderMaterial({
+      vertexShader: fullscreenVert, fragmentShader: postFrag,
+      uniforms: {
+        uScene: { value: sceneRT.texture }, uPrevScene: { value: prevRT.texture },
+        uTime: { value: 0 }, uTransition: { value: 0 },
+        uResolution: { value: new THREE.Vector2(rtW, rtH) }
+      },
+      depthTest: false, depthWrite: false
+    });
+    var quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), screenMaterial);
+    screenScene.add(quad);
+    sceneRT.texture.minFilter = THREE.NearestFilter;
+    sceneRT.texture.magFilter = THREE.NearestFilter;
+    prevRT.texture.minFilter = THREE.NearestFilter;
+    prevRT.texture.magFilter = THREE.NearestFilter;
+    window.addEventListener('resize', onResize);
     switchScene(initialScene || 'fog_highway');
-
-    function animLoop() {
-      animId = requestAnimationFrame(animLoop);
-      if (currentSceneObj && currentSceneObj.animate) {
-        currentSceneObj.animate();
-      }
-      if (renderer && currentSceneObj && currentSceneObj.scene && currentSceneObj.camera) {
-        renderer.render(currentSceneObj.scene, currentSceneObj.camera);
-      }
-    }
     animLoop();
   }
 
-  function switchScene(sceneName) {
-    if (sceneName === currentSceneName && currentSceneObj) return;
+  function onResize() {
+    if (!renderer) return;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    var rtW = Math.max(160, Math.floor(window.innerWidth / 4));
+    var rtH = Math.max(120, Math.floor(window.innerHeight / 4));
+    sceneRT.setSize(rtW, rtH);
+    prevRT.setSize(rtW, rtH);
+    screenMaterial.uniforms.uResolution.value.set(rtW, rtH);
+    if (currentSceneObj && currentSceneObj.camera) {
+      currentSceneObj.camera.aspect = window.innerWidth / window.innerHeight;
+      currentSceneObj.camera.updateProjectionMatrix();
+    }
+  }
 
-    // Dispose previous scene
+  function animLoop() {
+    animId = requestAnimationFrame(animLoop);
+    var elapsed = clock.getElapsedTime();
+    if (transitionActive) {
+      var p = Math.min(1, (performance.now() - transitionStart) / 3000);
+      screenMaterial.uniforms.uTransition.value = p;
+      if (p >= 1) { transitionActive = false; }
+    }
+    screenMaterial.uniforms.uTime.value = elapsed;
+    if (currentSceneObj && currentSceneObj.animate) {
+      currentSceneObj.animate(clock.getDelta(), elapsed);
+    }
+    // Update PS1 vertex wobble time on all scene materials
+    if (currentSceneObj && currentSceneObj.scene) {
+      updateWobbleTime(currentSceneObj.scene, elapsed);
+    }
+
+    if (currentSceneObj && currentSceneObj.scene && currentSceneObj.camera) {
+      renderer.setRenderTarget(sceneRT);
+      renderer.render(currentSceneObj.scene, currentSceneObj.camera);
+    }
+    renderer.setRenderTarget(null);
+    renderer.render(screenScene, screenCamera);
+  }
+
+  function switchScene(sceneName) {
+    if (sceneName === currentSceneName && currentSceneObj && !transitionActive) return;
+    if (currentSceneObj && currentSceneObj.scene && currentSceneObj.camera) {
+      renderer.setRenderTarget(prevRT);
+      renderer.render(currentSceneObj.scene, currentSceneObj.camera);
+      renderer.setRenderTarget(null);
+      screenMaterial.uniforms.uPrevScene.value = prevRT.texture;
+    }
     if (currentSceneObj && currentSceneObj.dispose) {
       currentSceneObj.dispose();
-      currentSceneObj = null;
     }
-
     currentSceneName = sceneName;
-
-    // Create new scene from global function
     var createFn = window['createScene_' + sceneName];
     if (typeof createFn === 'function') {
-      currentSceneObj = createFn(container);
+      currentSceneObj = createFn();
+      if (currentSceneObj && currentSceneObj.scene) {
+        injectVertexWobble(currentSceneObj.scene);
+        setNearestFiltering(currentSceneObj.scene);
+      }
     }
+    transitionActive = true;
+    transitionStart = performance.now();
+    screenMaterial.uniforms.uTransition.value = 0;
   }
 
-  function getCurrentScene() {
-    return currentSceneName;
+  var _wobbleInjected = new WeakSet();
+  function injectVertexWobble(scene) {
+    scene.traverse(function (obj) {
+      if (!obj.material || _wobbleInjected.has(obj.material)) return;
+      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(function (mat) {
+        if (!mat || !mat.isMaterial || _wobbleInjected.has(mat)) return;
+        _wobbleInjected.add(mat);
+        mat.onBeforeCompile = function (shader) {
+          shader.uniforms.uTimeWobble = { value: 0 };
+          shader.vertexShader = 'uniform float uTimeWobble;\n' + shader.vertexShader;
+          shader.vertexShader = shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            '#include <begin_vertex>\n' +
+            'float _w = sin(transformed.y * 100.0 + uTimeWobble) * 0.3;\n' +
+            'transformed.x += _w;\n' +
+            'transformed = floor(transformed * 32.0) / 32.0;'
+          );
+          mat._wobbleShader = shader;
+        };
+      });
+    });
   }
 
-  return {
-    start: start,
-    switchScene: switchScene,
-    getCurrentScene: getCurrentScene,
-  };
+  function setNearestFiltering(scene) {
+    scene.traverse(function (obj) {
+      if (!obj.material) return;
+      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(function (mat) {
+        if (mat.map) { mat.map.minFilter = THREE.NearestFilter; mat.map.magFilter = THREE.NearestFilter; }
+      });
+    });
+  }
+
+  function updateWobbleTime(scene, t) {
+    scene.traverse(function (obj) {
+      if (!obj.material) return;
+      var mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach(function (mat) {
+        if (mat._wobbleShader && mat._wobbleShader.uniforms) {
+          mat._wobbleShader.uniforms.uTimeWobble.value = t;
+        }
+      });
+    });
+  }
+
+  function getCurrentScene() { return currentSceneName; }
+
+  return { start: start, switchScene: switchScene, getCurrentScene: getCurrentScene };
 })();

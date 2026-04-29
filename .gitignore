@@ -9,3 +9,7 @@ logs/
 output/docs-publish-agent/
 output/quality_report.json
 .env
+*.db
+*.sqlite
+node_modules/
+.checkpoints/

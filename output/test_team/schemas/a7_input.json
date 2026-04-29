@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A7 Content Reviewer Input",
+  "type": "object",
+  "required": ["review_id"],
+  "properties": {
+    "review_id": { "type": "string" },
+    "target_url": { "type": "string", "default": "http://localhost:8765" },
+    "sample_size": { "type": "integer", "default": 10, "minimum": 3, "maximum": 50 },
+    "review_aspects": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["narrative", "localization", "length", "balance", "scenes"] },
+      "default": ["narrative", "localization", "length", "balance", "scenes"]
+    },
+    "seed_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["看看四周", "向前走", "檢查終端機", "觸碰螢幕", "打開門", "回憶過去", "尋找出口", "對話", "等待", "觸碰光源"]
+    },
+    "game_source_dir": { "type": "string" }
+  }
+}

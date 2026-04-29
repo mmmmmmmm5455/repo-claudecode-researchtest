@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A4 Performance Profiler Input",
+  "type": "object",
+  "required": ["profile_id"],
+  "properties": {
+    "profile_id": { "type": "string" },
+    "target_url": { "type": "string", "default": "http://localhost:8765" },
+    "duration_seconds": { "type": "integer", "default": 60, "minimum": 10 },
+    "concurrent_users": { "type": "integer", "default": 1, "minimum": 1, "maximum": 10 },
+    "sample_rate": { "type": "integer", "default": 10, "minimum": 5 },
+    "profile_scenes": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["rain_underpass", "snow_bridge", "fog_highway", "blizzard_street"] },
+      "default": ["fog_highway", "rain_underpass"]
+    },
+    "game_source_dir": { "type": "string" }
+  }
+}

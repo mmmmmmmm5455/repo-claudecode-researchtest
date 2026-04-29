@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A3 Bug Fixer Output",
+  "type": "object",
+  "required": ["fix_id", "fixes_applied", "unfixable_bugs", "total_fixed", "total_unfixable"],
+  "properties": {
+    "fix_id": { "type": "string" },
+    "fixes_applied": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["bug_id", "fixed", "files_changed"],
+        "properties": {
+          "bug_id": { "type": "string" },
+          "fixed": { "type": "boolean" },
+          "fix_description": { "type": "string" },
+          "files_changed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["file", "lines_added", "lines_removed"],
+              "properties": {
+                "file": { "type": "string" },
+                "lines_added": { "type": "integer" },
+                "lines_removed": { "type": "integer" },
+                "patch_hunk": { "type": "string" },
+                "backup_path": { "type": "string" }
+              }
+            }
+          },
+          "import_chain_checked": { "type": "boolean" },
+          "style_matched": { "type": "boolean" },
+          "forbidden_files_touched": { "type": "boolean" },
+          "reverted": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "unfixable_bugs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["bug_id", "reason", "needs_human"],
+        "properties": {
+          "bug_id": { "type": "string" },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "forbidden_file", "too_many_files", "core_game_logic",
+              "requires_new_dependency", "ambiguous_root_cause",
+              "fix_introduces_breaking_change", "requires_design_decision", "cannot_reproduce"
+            ]
+          },
+          "needs_human": { "type": "boolean" },
+          "human_guidance_needed": { "type": "string" }
+        }
+      }
+    },
+    "total_fixed": { "type": "integer" },
+    "total_unfixable": { "type": "integer" },
+    "total_skipped": { "type": "integer" },
+    "errors": { "type": "array", "items": { "type": "string" } }
+  }
+}

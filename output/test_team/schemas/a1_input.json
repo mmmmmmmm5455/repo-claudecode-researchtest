@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "A1 Test Runner Input",
+  "type": "object",
+  "required": ["test_id", "target"],
+  "properties": {
+    "test_id": { "type": "string", "description": "唯一測試 ID，格式：YYYYMMDD-HHMMSS-序號" },
+    "target": { "type": "string", "enum": ["all", "pytest", "playwright", "api", "websocket", "smoke"], "default": "all" },
+    "server_port": { "type": "integer", "default": 8765 },
+    "server_host": { "type": "string", "default": "127.0.0.1" },
+    "timeout_seconds": { "type": "integer", "default": 120 },
+    "start_server": { "type": "boolean", "default": true },
+    "stop_server_after": { "type": "boolean", "default": false },
+    "game_source_dir": { "type": "string" },
+    "playwright_scenarios": { "type": "array", "items": { "type": "string" } },
+    "pytest_args": { "type": "string", "default": "-v --tb=short" },
+    "retry_failed": { "type": "integer", "default": 1, "minimum": 0, "maximum": 3 }
+  }
+}
