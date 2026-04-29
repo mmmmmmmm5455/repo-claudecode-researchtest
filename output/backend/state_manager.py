@@ -5,13 +5,17 @@ State is persisted as JSON files for durability across server restarts.
 """
 
 import json
+import logging
 import os
 import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-# Default storage location
+logger = logging.getLogger(__name__)
+
 DEFAULT_STATE_DIR = Path(os.environ.get("GAME_STATE_DIR", "./game_sessions"))
+DEFAULT_SESSION_TTL_HOURS = int(os.environ.get("SESSION_TTL_HOURS", "24"))
 
 
 class SessionState:
@@ -107,3 +111,56 @@ class SessionManager:
             filepath.unlink()
             return True
         return False
+
+    def cleanup_stale_sessions(self, max_age_hours: int = DEFAULT_SESSION_TTL_HOURS) -> int:
+        """Delete session files older than max_age_hours.
+
+        Reads created_at from each session JSON. If timestamp is missing or
+        unparseable, falls back to file modification time.
+
+        Returns the number of sessions deleted.
+        """
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=max_age_hours)
+        deleted = 0
+        for filepath in self._state_dir.glob("*.json"):
+            try:
+                age = self._session_age(filepath)
+                if age is not None and age < cutoff:
+                    session_id = filepath.stem
+                    if session_id in self._sessions:
+                        del self._sessions[session_id]
+                    filepath.unlink()
+                    deleted += 1
+            except OSError:
+                logger.warning("Failed to delete stale session: %s", filepath)
+        if deleted:
+            logger.info("Cleaned up %d stale sessions (TTL=%dh)", deleted, max_age_hours)
+        return deleted
+
+    def _session_age(self, filepath: Path):
+        """Extract the most recent activity timestamp from a session file.
+
+        Returns a timezone-aware datetime, or None if unreadable.
+        """
+        try:
+            with open(filepath, encoding="utf-8") as f:
+                data = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return None
+
+        for field in ("last_activity", "created_at"):
+            ts = data.get(field)
+            if ts:
+                try:
+                    dt = datetime.fromisoformat(str(ts))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    return dt
+                except ValueError:
+                    continue
+        return None
+
+    @property
+    def session_count(self) -> int:
+        """Return the number of session files on disk."""
+        return len(list(self._state_dir.glob("*.json")))

@@ -9,11 +9,15 @@ original code. Only refactors the COMMUNICATION LAYER.
 """
 
 import asyncio
+import logging
 import os
+import random
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 # Add original game source to Python path
 GAME_SOURCE_DIR = os.environ.get(
@@ -45,6 +49,18 @@ class GameEngine:
         self._story_engine = None  # Lazy init
         self._scene_cache: dict[str, str] = {}  # session_id -> current_scene
         self._glitch_counters: dict[str, int] = {}  # session_id -> glitch events
+        self._cleanup_stale_sessions()
+
+    def _cleanup_stale_sessions(self) -> None:
+        """Run TTL-based cleanup of stale session files on startup."""
+        before = self._session_manager.session_count
+        deleted = self._session_manager.cleanup_stale_sessions()
+        after = self._session_manager.session_count
+        if deleted:
+            logger.info(
+                "Session cleanup: %d deleted, %d remaining (%d before)",
+                deleted, after, before,
+            )
 
     @property
     def story_engine(self):
@@ -141,6 +157,9 @@ class GameEngine:
             # Update game state (advance round, apply effects)
             state.advance_round()
             state.add_log(f"> {player_input}")
+
+            # Update emotion/infection based on narrative and game state
+            self._update_emotion_infection(state, narrative, player_input)
 
             # Extract emotion/infection from Player
             emotion = getattr(state.player, 'emotion', 50.0) if state.player else 50.0
@@ -294,6 +313,94 @@ class GameEngine:
         }
 
     # ── Helpers ───────────────────────────────────────────────────────────
+
+    def _update_emotion_infection(self, state, narrative: str, player_input: str) -> None:
+        """Update Player emotion/infection based on narrative content and game state.
+
+        emotion (0-100): starts at 50, decreases with disturbing content.
+          Lower = more disturbed/fearful. Drops faster when narrative contains
+          dark keywords or when player takes risky actions.
+
+        infection (0-100): starts at 0, increases with cumulative exposure.
+          Higher = more corrupted by the millennium bug. Accelerates after
+          crossing 30 threshold (the bug is taking hold).
+
+        The changes are deterministic given the same input (no RNG for emotion
+        base change), ensuring reproducible test results. A small ±jitter is
+        applied to simulate the organic nature of emotional response.
+        """
+        if state.player is None:
+            return
+
+        player = state.player
+        old_emotion = player.emotion
+        old_infection = player.infection
+
+        # ── Emotion: decays with each action (the world is oppressive) ──
+        emotion_delta = -2.5  # base decay per action
+
+        # Dark keywords amplify emotional impact
+        dark_keywords = [
+            "黑暗", "恐懼", "害怕", "絕望", "孤獨", "死", "血", "怪物",
+            "蟲", "病毒", "感染", "侵蝕", "腐", "扭曲", "尖叫", "寂靜",
+            "空無", "詭異", "毛骨悚然", "陰影", "深淵", "冰冷", "窒息",
+            "dark", "fear", "horror", "death", "alone", "empty", "void",
+            "bug", "virus", "corrupt", "scream", "silence", "cold",
+        ]
+        dark_hits = sum(1 for kw in dark_keywords if kw in narrative)
+        emotion_delta -= dark_hits * 1.5
+
+        # Risky/aggressive player actions increase emotional toll
+        risky_keywords = ["攻擊", "殺", "破壞", "衝", "撞", "跳", "attack", "kill", "break"]
+        if any(kw in player_input for kw in risky_keywords):
+            emotion_delta -= 1.0
+
+        # Cautious/observant actions reduce emotional toll slightly
+        cautious_keywords = ["觀察", "等待", "聆聽", "躲", "藏", "小心", "慢慢", "look", "wait", "hide"]
+        if any(kw in player_input for kw in cautious_keywords):
+            emotion_delta += 0.5
+
+        # Apply emotion change with small jitter
+        jitter = random.uniform(-0.5, 0.5)
+        player.emotion = max(0.0, min(100.0, player.emotion + emotion_delta + jitter))
+
+        # ── Infection: accumulates with exposure ──
+        infection_delta = random.uniform(0.0, 1.5)
+
+        # Longer narratives = more exposure to the bug's influence
+        if len(narrative) > 400:
+            infection_delta += 1.0
+        if len(narrative) > 600:
+            infection_delta += 0.5
+
+        # Infection accelerates after threshold
+        if player.infection > 30:
+            infection_delta *= 1.5
+        if player.infection > 60:
+            infection_delta *= 1.3
+
+        # Dark content accelerates infection
+        infection_delta += dark_hits * 0.3
+
+        # Scene-based infection modifiers
+        scene_id = getattr(state, 'current_scene_id', '')
+        scene_modifiers = {
+            'blizzard_street': 0.8,   # cold slows the bug
+            'snow_bridge': 0.5,       # isolation slows spread
+            'fog_highway': 1.0,       # baseline
+            'rain_underpass': 1.3,    # damp environment accelerates
+            'village_square': 1.0,    # baseline
+        }
+        infection_delta *= scene_modifiers.get(scene_id, 1.0)
+
+        player.infection = max(0.0, min(100.0, player.infection + infection_delta))
+
+        logger.debug(
+            "Emotion: %.1f→%.1f (Δ%.1f), Infection: %.1f→%.1f (Δ%.1f), dark_hits=%d",
+            old_emotion, player.emotion, player.emotion - old_emotion,
+            old_infection, player.infection, player.infection - old_infection,
+            dark_hits,
+        )
 
     def _check_system_event(self, state, emotion: float, infection: float) -> Optional[str]:
         """Check for triggered system events (glitch popups, infection warnings)."""
