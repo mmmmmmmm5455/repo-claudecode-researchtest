@@ -8,6 +8,7 @@ function createScene_snow_bridge() {
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
     scene.fog = new THREE.FogExp2(0x003344, 0.0012);
+    scene.userData.fogDensityBase = 0.0012;
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 150);
     camera.position.set(0, 1.8, 6);

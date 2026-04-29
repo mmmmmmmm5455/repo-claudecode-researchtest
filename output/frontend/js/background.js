@@ -15,6 +15,9 @@ var BackgroundManager = (function () {
   var animId = null;
   var transitionActive = false;
   var transitionStart = 0;
+  var fogDensityVariation = 0;
+  var fogDensityTimer = 0;
+  var fogDensityInterval = 3 + Math.random() * 2;
 
   var fullscreenVert = [
     'varying vec2 vUv;',
@@ -30,10 +33,17 @@ var BackgroundManager = (function () {
     'uniform float uTime;',
     'uniform float uTransition;',
     'uniform vec2 uResolution;',
+    'uniform float uCrtIntensity;',
     'varying vec2 vUv;',
     'float rand(vec2 co) { return fract(sin(dot(co.xy, vec2(12.9898,78.233)))*43758.5453); }',
+    'vec2 barrelDistort(vec2 uv, float k) {',
+    '  vec2 centered = uv - 0.5;',
+    '  float r2 = dot(centered, centered);',
+    '  float f = 1.0 + k * r2;',
+    '  return 0.5 + centered * f;',
+    '}',
     'void main() {',
-    '  vec2 uv = vUv;',
+    '  vec2 uv = barrelDistort(vUv, -0.12 * uCrtIntensity);',
     '  vec4 color = texture2D(uScene, uv);',
     '  if (uTransition > 0.0) {',
     '    vec4 prev = texture2D(uPrevScene, uv);',
@@ -83,7 +93,8 @@ var BackgroundManager = (function () {
       uniforms: {
         uScene: { value: sceneRT.texture }, uPrevScene: { value: prevRT.texture },
         uTime: { value: 0 }, uTransition: { value: 0 },
-        uResolution: { value: new THREE.Vector2(rtW, rtH) }
+        uResolution: { value: new THREE.Vector2(rtW, rtH) },
+        uCrtIntensity: { value: 1.0 }
       },
       depthTest: false, depthWrite: false
     });
@@ -123,6 +134,18 @@ var BackgroundManager = (function () {
     screenMaterial.uniforms.uTime.value = elapsed;
     if (currentSceneObj && currentSceneObj.animate) {
       currentSceneObj.animate(clock.getDelta(), elapsed);
+    }
+    // P2-FOG-01: procedural fog density random walk ±15%, update every 3-5s
+    fogDensityTimer += clock.getDelta();
+    if (fogDensityTimer >= fogDensityInterval && currentSceneObj && currentSceneObj.scene && currentSceneObj.scene.fog) {
+      fogDensityTimer = 0;
+      fogDensityInterval = 3 + Math.random() * 2;
+      if (currentSceneObj.scene.fog.density !== undefined) {
+        var baseDensity = currentSceneObj.scene.userData.fogDensityBase || currentSceneObj.scene.fog.density;
+        currentSceneObj.scene.userData.fogDensityBase = baseDensity;
+        fogDensityVariation = (Math.random() - 0.5) * 0.30;
+        currentSceneObj.scene.fog.density = baseDensity * (1.0 + fogDensityVariation);
+      }
     }
     // Update PS1 vertex wobble time on all scene materials
     if (currentSceneObj && currentSceneObj.scene) {

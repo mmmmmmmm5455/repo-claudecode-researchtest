@@ -7,6 +7,7 @@ function createScene_fog_highway() {
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1c20);
     scene.fog = new THREE.FogExp2(0x8a9bb0, 0.0015);
+    scene.userData.fogDensityBase = 0.0015;
 
     var camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.5, 120);
     camera.position.set(0, 1.6, 5);

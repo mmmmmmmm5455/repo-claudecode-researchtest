@@ -36,6 +36,12 @@
     if (typeof BackgroundManager !== 'undefined') {
       BackgroundManager.start(currentScene);
     }
+    if (typeof DreamcoreManager !== 'undefined') {
+      DreamcoreManager.start();
+    }
+    if (typeof AudioManager !== 'undefined') {
+      AudioManager.switchScene(currentScene);
+    }
   }
 
   // ---- Event Binding ----
@@ -155,6 +161,9 @@
       currentScene = data.scene_trigger;
       if (typeof BackgroundManager !== 'undefined') {
         BackgroundManager.switchScene(data.scene_trigger);
+      }
+      if (typeof AudioManager !== 'undefined') {
+        AudioManager.switchScene(data.scene_trigger);
       }
       updateLocationDisplay(data.scene_trigger);
     }

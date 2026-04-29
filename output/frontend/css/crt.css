@@ -31,3 +31,18 @@ body::before {
     1px 0 1px rgba(255,0,0,0.18),
     -1px 0 1px rgba(0,255,255,0.18);
 }
+
+/* --- Dreamcore fragment overlay (P2-DREAM-01) --- */
+.dreamcore-fragment {
+  position: fixed;
+  pointer-events: none;
+  z-index: 55;
+  font-family: var(--font-vt323);
+  font-size: 20px;
+  color: var(--color-cold-cyan);
+  text-shadow: 0 0 6px var(--color-cold-cyan), 0 0 12px rgba(0,229,255,0.25);
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  white-space: nowrap;
+  user-select: none;
+}
