@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>千禧年蟲事件 — Millennium Bug Incident</title>
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@400;700&family=Silkscreen&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/panels.css">
+  <link rel="stylesheet" href="css/counters.css">
+  <link rel="stylesheet" href="css/crt.css">
+</head>
+<body>
+  <div id="bg-container"></div>
+
+  <div id="top-bar">
+    <div id="viewer-counter" class="seven-segment">01</div>
+    <div id="emotion-bar" class="status-bar">
+      <span class="bar-label">EMOTION</span>
+      <div class="bar-track">
+        <div class="bar-fill" id="emotion-fill"></div>
+      </div>
+    </div>
+    <div id="infection-bar" class="status-bar">
+      <span class="bar-label">INFECTION</span>
+      <div class="bar-track">
+        <div class="bar-fill" id="infection-fill"></div>
+      </div>
+    </div>
+    <div id="fragment-counter" class="seven-segment">00</div>
+  </div>
+
+  <div id="dialog-panel">
+    <div id="dialog-content"></div>
+  </div>
+
+  <div id="input-panel">
+    <span class="prompt">$</span>
+    <input type="text" id="input-field" placeholder="輸入行動..." autocomplete="off" maxlength="200">
+    <button id="send-button" type="button">發送</button>
+  </div>
+
+  <div id="bottom-bar">
+    <div id="location-display"></div>
+    <div id="attributes-display"></div>
+  </div>
+
+  <div id="system-dialog" class="hidden">
+    <div id="system-dialog-header"></div>
+    <div id="system-dialog-body"></div>
+    <button id="system-dialog-close" type="button">OK</button>
+  </div>
+
+  <div id="are-you-real-popup" class="hidden">
+    <p>are you real?</p>
+    <button id="ayr-yes" type="button">是</button>
+    <button id="ayr-no" type="button">否</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/scenes/rain_underpass.js"></script>
+  <script src="js/scenes/snow_bridge.js"></script>
+  <script src="js/scenes/fog_highway.js"></script>
+  <script src="js/scenes/blizzard_street.js"></script>
+  <script src="js/background.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+/* panels.css - Mac OS 9 / QuickTime window panels */
+
+#bg-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+#dialog-panel { z-index: 10; }
+#input-panel { z-index: 20; }
+#top-bar { z-index: 30; }
+#bottom-bar { z-index: 30; }
+#system-dialog { z-index: 40; }
+#are-you-real-popup { z-index: 50; }
+
+#dialog-panel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 720px; height: 50%; max-height: 480px; overflow-y: auto; overflow-x: hidden; background: var(--color-panel-bg); border: 1px solid var(--color-cold-cyan); padding: 16px; font-family: var(--font-vt323); font-size: 18px; line-height: 1.6; color: var(--color-text-primary); }
+
+#input-panel { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 720px; background: var(--color-void-black); border: 1px solid var(--color-panel-secondary); padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
+#input-panel .prompt { color: var(--color-sick-green); font-family: var(--font-vt323); font-size: 18px; }
+#input-field { flex: 1; font-size: 16px; caret-color: var(--color-sick-green); }
+#send-button { font-family: var(--font-vt323); font-size: 16px; background: var(--color-panel-secondary); border: 1px solid var(--color-cold-cyan); padding: 4px 16px; cursor: pointer; }
+#send-button:hover { background: var(--color-cold-cyan); color: var(--color-void-black); }
+
+#top-bar { position: fixed; top: 0; left: 0; width: 100%; height: 32px; background: var(--color-panel-secondary); border-bottom: 1px solid var(--color-cold-cyan); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-family: var(--font-vt323); font-size: 14px; }
+
+#bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background: var(--color-panel-secondary); border-top: 1px solid var(--color-cold-cyan); display: flex; align-items: center; justify-content: space-around; padding: 0 16px; font-size: 12px; gap: 16px; }
+
+#system-dialog { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 400px; max-width: 90%; background: var(--color-panel-bg); border: 2px solid var(--color-cold-cyan); font-family: var(--font-vt323); }
+#system-dialog-header { background: var(--color-panel-secondary); padding: 4px 8px; border-bottom: 1px solid var(--color-cold-cyan); font-size: 14px; text-align: center; }
+#system-dialog-body { padding: 16px; font-size: 16px; line-height: 1.5; color: var(--color-text-primary); }
+#system-dialog-close { display: block; margin: 8px auto 16px; font-family: var(--font-vt323); font-size: 14px; background: var(--color-panel-secondary); border: 1px solid var(--color-cold-cyan); padding: 4px 24px; cursor: pointer; }
+#system-dialog-close:hover { background: var(--color-cold-cyan); color: var(--color-void-black); }
+
+#are-you-real-popup { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 360px; max-width: 90%; background: var(--color-dark-purple); border: 2px solid var(--color-sick-green); padding: 24px; text-align: center; font-family: var(--font-vt323); font-size: 16px; color: var(--color-sick-green); }
+#are-you-real-popup button { font-family: var(--font-vt323); font-size: 14px; color: var(--color-sick-green); background: transparent; border: 1px solid var(--color-sick-green); padding: 4px 20px; margin: 12px 4px 0; cursor: pointer; }
+#are-you-real-popup button:hover { background: var(--color-sick-green); color: var(--color-void-black); }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-panel-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-cold-cyan); }
+* { scrollbar-width: thin; scrollbar-color: var(--color-cold-cyan) var(--color-panel-bg); }

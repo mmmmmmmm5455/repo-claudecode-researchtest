@@ -1,0 +1,112 @@
+/* === main.css — Cybercore Y2K Global Styles === */
+/* 12-Color Palette + Pixel Fonts + Base Reset */
+
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Silkscreen&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+@font-face {
+  font-family: 'VT323';
+  src: local('VT323');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --color-void-black: #0A0D14;
+  --color-shadow-cyan: #003344;
+  --color-panel-bg: #1A2530;
+  --color-panel-secondary: #2A3540;
+  --color-sick-green: #33FF33;
+  --color-sick-green-dim: #1A8C1A;
+  --color-dark-orange: #8B4513;
+  --color-cold-cyan: #88CCFF;
+  --color-dark-purple: #1A1025;
+  --color-taillight-red: #8B0000;
+  --color-text-primary: #C0C0C0;
+  --color-text-secondary: #708090;
+
+  --font-vt323: 'VT323', monospace;
+  --font-silkscreen: 'Silkscreen', monospace;
+  --font-share-tech: 'Share Tech Mono', monospace;
+  --font-orbitron: 'Orbitron', monospace;
+
+  --z-bg: 0;
+  --z-dialog: 10;
+  --z-input: 20;
+  --z-status: 30;
+  --z-system: 40;
+  --z-popup: 50;
+  --z-crt: 60;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-void-black);
+  color: var(--color-text-primary);
+  font-family: var(--font-share-tech);
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+::selection {
+  background: var(--color-sick-green-dim);
+  color: var(--color-void-black);
+}
+
+a {
+  color: var(--color-cold-cyan);
+  text-decoration: none;
+}
+
+button {
+  font-family: var(--font-vt323);
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+}
+
+input,
+textarea {
+  font-family: var(--font-share-tech);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+input:focus,
+textarea:focus {
+  caret-color: var(--color-sick-green);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

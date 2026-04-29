@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+game_sessions/
+logs/
+*.log
+*.tmp
+output/docs-publish-agent/
+output/quality_report.json
+.env

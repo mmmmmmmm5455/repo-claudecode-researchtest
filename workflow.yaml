@@ -1,0 +1,498 @@
+# =============================================================================
+# Part B: Multi-Agent Pipeline Workflow Configuration
+# "千禧年蟲事件" — Web Frontend Development Pipeline
+# 8 Agents + 1 Guardian, Y2K Liminal Space + Cybercore UI
+# =============================================================================
+# Format: workflow-orchestrator compatible
+# Machine-executable — no human interpretation required
+# =============================================================================
+
+schema_version: "2.0"
+project: "millennium-bug-incident"
+description: "Python terminal text adventure to Web frontend with PS1 liminal space backgrounds and Cybercore Y2K UI"
+
+# ── Agent Definitions ───────────────────────────────────────────────────────
+
+agents:
+
+  # Wave 1 ───────────────────────────────────────────────────────────────────
+  tech-survey-agent:
+    role: "Frontend technology researcher"
+    description: "Research Three.js PS1 shaders, CSS CRT scanlines, FastAPI WebSocket streaming, Mac OS 9 UI CSS, 7-segment display CSS"
+    phase: 1
+    wave: 1
+    skills:
+      - sci-academic-deep-research
+      - autoresearch
+    input:
+      format: markdown
+      file: GAME_PRD_V2.md
+      schema:
+        type: object
+        required: [chapters]
+    output:
+      format: json
+      file: output/tech_survey.json
+      schema:
+        type: object
+        required: [agent, timestamp, topics, recommended_libraries, risk_items]
+        properties:
+          topics:
+            type: object
+            required: [threejs_ps1_shader, css_crt_scanlines, fastapi_websocket_streaming, mac_os9_ui_css, seven_segment_display_css]
+    quality_gate:
+      - id: G1.1
+        rule: "5 topics all have feasibility != null"
+        check: "python3 -c \"import json; d=json.load(open('output/tech_survey.json')); assert all(v.get('feasibility') for v in d['topics'].values())\""
+      - id: G1.2
+        rule: "Each topic has >= 1 code_example"
+        check: "python3 -c \"import json; d=json.load(open('output/tech_survey.json')); assert all(len(v.get('code_examples',[])) >= 1 for v in d['topics'].values())\""
+    timeout: 600
+    retry: 1
+    depends_on: []
+
+  frontend-scaffold-agent:
+    role: "Frontend file structure and HTML skeleton builder"
+    description: "Create frontend/ directory tree, index.html with correct container IDs, CSS/JS file stubs"
+    phase: 1
+    wave: 1
+    skills:
+      - caveman
+      - ccgs-quick-design
+    input:
+      format: markdown
+      file: GAME_PRD_V2.md
+      schema:
+        type: object
+    output:
+      format: html+css+js
+      file: frontend/index.html
+      schema:
+        type: object
+        required: [index_html, css_dir, js_dir, assets_dir]
+    quality_gate:
+      - id: G3.1
+        rule: "All 7 container IDs present and correct"
+        check: "python3 -c \"ids=['bg-container','top-bar','dialog-panel','input-panel','bottom-bar','system-dialog']; import re; html=open('frontend/index.html').read(); found=[i for i in ids if f'id=\\\"{i}\\\"' in html or f\\\"id='{i}'\\\" in html]; assert len(found)==6, f'Missing: {set(ids)-set(found)}'\""
+      - id: G3.2
+        rule: "No external framework script references"
+        check: "! grep -qi 'react\\|vue\\|angular\\|jquery\\|bootstrap' frontend/index.html"
+    timeout: 300
+    retry: 1
+    depends_on: []
+
+  # Wave 2 ───────────────────────────────────────────────────────────────────
+  backend-refactor-agent:
+    role: "Python backend refactor to FastAPI + WebSocket streaming"
+    description: "Convert sync print/input loop to FastAPI with WebSocket streaming, LLM stream=True, viewer counter backend-computed"
+    phase: 2
+    wave: 2
+    skills:
+      - caveman
+      - test-driven-development
+    input:
+      format: json+python
+      file: output/tech_survey.json
+      additional_inputs:
+        - "GAME_PRD_V2.md"
+        - "${GAME_SOURCE_DIR}/engine/"
+        - "${GAME_SOURCE_DIR}/game/"
+        - "${GAME_SOURCE_DIR}/story/"
+        - "${GAME_SOURCE_DIR}/data/y2k-theme/"
+      schema:
+        type: object
+        required: [topics]
+    output:
+      format: python
+      file: backend/server.py
+      schema:
+        type: object
+        required: [server_py, game_engine_py, llm_client_py, state_manager_py, scene_selector_py, viewer_counter_py, test_server_py, requirements_txt]
+    quality_gate:
+      - id: G2.1
+        rule: "pytest all pass"
+        check: "cd backend && python3 -m pytest test_server.py -v --tb=short"
+      - id: G2.2
+        rule: "No print/input in server.py"
+        check: '! grep -q ''print(\|input('' backend/server.py'
+      - id: G2.3
+        rule: "POST /api/game/action returns valid JSON Schema"
+        check: "python3 -c \"import json, requests; r=requests.post('http://localhost:8000/api/game/action', json={'session_id':'test','player_input':'hello','timestamp':'2026-01-01T00:00:00Z'}); d=r.json(); assert 'narrative' in d; assert 'emotion_value' in d; assert 'viewer_count' in d; assert 'scene_trigger' in d\""
+      - id: G2.4
+        rule: "Original game files readable and referenced"
+        check: "python3 -c \"import os; p=os.environ.get('GAME_SOURCE_DIR',''); assert p and os.path.isdir(p), f'GAME_SOURCE_DIR missing: {p}'; assert os.path.exists(os.path.join(p,'engine','ai_dialogue.py')), 'engine/ai_dialogue.py missing'; assert os.path.exists(os.path.join(p,'game','game_state.py')), 'game/game_state.py missing'\""
+    timeout: 900
+    retry: 2
+    depends_on:
+      - tech-survey-agent
+
+  threejs-scene-agent:
+    role: "Three.js PS1 liminal space 3D scene developer"
+    description: "Create 4 PS1-style 3D background scenes with vertex wobble shader, color quantization, and scene manager"
+    phase: 2
+    wave: 2
+    skills:
+      - ccgs-prototype
+      - caveman
+    input:
+      format: json
+      file: output/tech_survey.json
+      schema:
+        type: object
+    output:
+      format: javascript+glsl
+      file: frontend/js/background.js
+      schema:
+        type: object
+        required: [scenes_dir, shaders_dir, background_js]
+    quality_gate:
+      - id: G4.1
+        rule: "All 4 scene files export createScene()"
+        check: "for f in rain_underpass.js snow_bridge.js fog_highway.js blizzard_street.js; do grep -q 'function createScene' frontend/js/scenes/$f || exit 1; done"
+      - id: G4.2
+        rule: "Vertex shader contains wobble effect"
+        check: "grep -q 'wobble' frontend/js/shaders/ps1_vertex.glsl"
+      - id: G4.3
+        rule: "background.js exports switchScene()"
+        check: "grep -q 'switchScene' frontend/js/background.js"
+    timeout: 1200
+    retry: 2
+    depends_on:
+      - tech-survey-agent
+      - frontend-scaffold-agent
+
+  css-ui-agent:
+    role: "Cybercore Y2K CSS UI developer"
+    description: "Implement QuickTime Player / Mac OS 9 style UI panels, CRT overlay, 7-segment counter, with strict color palette compliance"
+    phase: 2
+    wave: 2
+    skills:
+      - ccgs-design-review
+      - caveman
+    input:
+      format: markdown
+      file: GAME_PRD_V2.md
+      schema:
+        type: object
+    output:
+      format: css
+      file: frontend/css/main.css
+      schema:
+        type: object
+        required: [main_css, panels_css, counters_css, crt_css]
+    quality_gate:
+      - id: G5.1
+        rule: "All colors in allowed palette"
+        check: "python3 lint_colors.py frontend/css/"
+      - id: G5.2
+        rule: "No border-radius anywhere"
+        check: "! grep -r 'border-radius' frontend/css/"
+      - id: G5.3
+        rule: "CRT overlay opacity in [0.35, 0.45]"
+        check: "python3 -c \"import re; c=open('frontend/css/crt.css').read(); m=re.search(r'opacity:\\s*([\\d.]+)', c); v=float(m.group(1)) if m else 0; assert 0.35 <= v <= 0.45, f'CRT opacity={v} out of range'\""
+    timeout: 600
+    retry: 2
+    depends_on:
+      - frontend-scaffold-agent
+
+  api-layer-agent:
+    role: "Frontend API communication layer developer"
+    description: "Implement api.js (fetch + WebSocket), renderer.js (typewriter effect + state update), app.js (event binding + state management)"
+    phase: 2
+    wave: 2
+    skills:
+      - caveman
+      - test-driven-development
+    input:
+      format: json
+      file: output/tech_survey.json
+      schema:
+        type: object
+    output:
+      format: javascript
+      file: frontend/js/app.js
+      schema:
+        type: object
+        required: [api_js, renderer_js, app_js]
+    quality_gate:
+      - id: G6.1
+        rule: "No import/require in api.js (pure browser execution)"
+        check: "! grep -qE 'import |require\\(' frontend/js/api.js"
+      - id: G6.2
+        rule: "typewriterEffect function exists in renderer.js"
+        check: "grep -q 'typewriterEffect' frontend/js/renderer.js"
+      - id: G6.3
+        rule: "app.js binds input events"
+        check: "grep -q 'addEventListener' frontend/js/app.js"
+    timeout: 600
+    retry: 2
+    depends_on:
+      - tech-survey-agent
+      - backend-refactor-agent
+      - frontend-scaffold-agent
+
+  # Wave 3 ───────────────────────────────────────────────────────────────────
+  qa-integration-agent:
+    role: "Automated quality assurance and integration tester"
+    description: "Run 12 machine-checkable QA rules: color palette, forbidden patterns, backend API schema, file structure, CRT opacity, shader effects"
+    phase: 3
+    wave: 3
+    skills:
+      - ccgs-qa-plan
+      - verification-before-completion
+    input:
+      format: multiple
+      file: frontend/
+      schema:
+        type: object
+        required: [frontend_dir, backend_dir, prd]
+    output:
+      format: json
+      file: output/qa_report.json
+      schema:
+        type: object
+        required: [agent, timestamp, checks, overall_pass, summary]
+        properties:
+          checks:
+            type: object
+            required: [css_palette_compliance, css_no_warm_colors, css_no_border_radius, html_no_framework_import, html_no_emoji, js_no_import_statement, js_no_framework_ref, backend_api_schema, backend_pytest, frontend_file_structure, crt_opacity_check, ps1_shader_wobble]
+    quality_gate:
+      - id: G7.1
+        rule: "All 12 checks executed"
+        check: "python3 -c \"import json; d=json.load(open('output/qa_report.json')); assert len(d['checks'])==12\""
+      - id: G7.2
+        rule: "overall_pass == true"
+        check: "python3 -c \"import json; d=json.load(open('output/qa_report.json')); assert d['overall_pass']==True\""
+    timeout: 600
+    retry: 2
+    depends_on:
+      - backend-refactor-agent
+      - frontend-scaffold-agent
+      - threejs-scene-agent
+      - css-ui-agent
+      - api-layer-agent
+
+  # Wave 4 ───────────────────────────────────────────────────────────────────
+  docs-publish-agent:
+    role: "Documentation generator and GitHub publisher"
+    description: "Generate README.md (project overview, startup, API list), DEPLOY.md (deployment guide), and git push to origin master"
+    phase: 4
+    wave: 4
+    skills:
+      - sci-paper-writing
+      - github-ops
+    input:
+      format: json
+      file: output/qa_report.json
+      schema:
+        type: object
+        required: [overall_pass]
+    output:
+      format: markdown
+      file: README.md
+      schema:
+        type: object
+        required: [readme_md, deploy_md]
+    quality_gate:
+      - id: G8.1
+        rule: "README contains startup command"
+        check: 'grep -q ''uvicorn\|python'' README.md'
+      - id: G8.2
+        rule: "git push succeeds"
+        check: "git push origin master 2>&1"
+    timeout: 300
+    retry: 1
+    depends_on:
+      - qa-integration-agent
+    block_condition: "qa-integration-agent output overall_pass != true"
+
+# ── Session Guardian ─────────────────────────────────────────────────────────
+
+session_guardian:
+  role: "Pipeline monitor and error recovery"
+  description: "Monitor all agent execution, log timing and errors, trigger auto-recovery on timeout, perform stall detection"
+  skills:
+    - gstack-guard
+    - auto-recovery
+  monitor:
+    - metric: agent_timeout
+      action: retry_once_then_abort
+    - metric: agent_stall
+      threshold_seconds: 1800
+      action: log_and_abort
+    - metric: agent_error_count
+      threshold: 3
+      action: abort_pipeline
+  output:
+    format: json
+    file: output/session_log.json
+
+# ── Git Publish Configuration ────────────────────────────────────────────────
+
+git_publish:
+  trigger_condition: "qa-integration-agent overall_pass == true"
+  remote: "${GIT_REMOTE}"
+  branch: master
+  lfs_patterns:
+    - "*.psd"
+    - "*.blend"
+    - "*.fbx"
+    - "*.png"
+    - "*.jpg"
+    - "*.tga"
+    - "*.wav"
+    - "*.ogg"
+    - "*.mp3"
+  pre_push_checks:
+    # Documentation (A8)
+    - "test -f README.md"
+    - "test -f DEPLOY.md"
+    # Frontend HTML entry (A3)
+    - "test -f frontend/index.html"
+    # Frontend CSS (A5) — all 4 files
+    - "test -d frontend/css && test -f frontend/css/main.css"
+    - "test -f frontend/css/panels.css"
+    - "test -f frontend/css/counters.css"
+    - "test -f frontend/css/crt.css"
+    # Frontend JS — API layer (A6)
+    - "test -d frontend/js && test -f frontend/js/api.js"
+    - "test -f frontend/js/renderer.js"
+    - "test -f frontend/js/app.js"
+    - "test -f frontend/js/background.js"
+    # Frontend JS — 3D scenes (A4)
+    - "test -d frontend/js/scenes && test -f frontend/js/scenes/rain_underpass.js"
+    - "test -f frontend/js/scenes/snow_bridge.js"
+    - "test -f frontend/js/scenes/fog_highway.js"
+    - "test -f frontend/js/scenes/blizzard_street.js"
+    # Frontend JS — shaders (A4)
+    - "test -d frontend/js/shaders && test -f frontend/js/shaders/ps1_vertex.glsl"
+    - "test -f frontend/js/shaders/ps1_fragment.glsl"
+    # Backend (A2) — all 8 files
+    - "test -d backend && test -f backend/server.py"
+    - "test -f backend/game_engine.py"
+    - "test -f backend/llm_client.py"
+    - "test -f backend/state_manager.py"
+    - "test -f backend/scene_selector.py"
+    - "test -f backend/viewer_counter.py"
+    - "test -f backend/requirements.txt"
+    - "test -f backend/test_server.py"
+    # Pipeline outputs (A1, A7)
+    - "test -f output/tech_survey.json"
+    - "test -f output/qa_report.json"
+  retry:
+    max_attempts: 3
+    delay_seconds: 30
+
+# ── Quality Standards (Machine-Checkable, 12 rules matching A7 output) ────────
+
+quality_standards:
+  # CSS checks (A5 + A7)
+  css_palette_compliance:
+    target: 100
+    description: "Percentage of hex colors within allowed 12-color palette"
+    tool: lint_colors.py
+    check_command: "python3 lint_colors.py frontend/css/"
+
+  css_no_warm_colors:
+    target: 0
+    description: "Count of warm color occurrences in CSS (red/orange/yellow/pink, excluding #8B0000)"
+    tool: grep+python
+    check_command: "python3 -c \"import re, sys; violations=[]; [(violations.append(f'{fp}: warm'), print(f'{fp}: warm')) for fp in sys.argv[1:] for line in open(fp) for m in re.finditer(r'#(?:FF[0-9A-Fa-f]{4}|FF[0-9A-Fa-f]{2}[^0-9A-Fa-f]|[Ff][Ff][0-9A-Fa-f]{4})', line) if m.group().upper() not in ['#8B0000']]; sys.exit(len(violations))\" frontend/css/*.css"
+
+  css_no_border_radius:
+    target: 0
+    description: "Count of border-radius occurrences in CSS (must be 0)"
+    tool: grep
+    check_command: "grep -r 'border-radius' frontend/css/ | wc -l"
+
+  # HTML checks (A3 + A7)
+  html_no_framework_import:
+    target: 0
+    description: "Count of external framework references in HTML"
+    tool: grep
+    check_command: "grep -ci 'react\\|vue\\|angular\\|jquery\\|bootstrap' frontend/index.html"
+
+  html_no_emoji:
+    target: 0
+    description: "Count of emoji Unicode characters in HTML"
+    tool: grep+python
+    check_command: "python3 -c \"import re; html=open('frontend/index.html').read(); emoji=re.findall(r'[\\U0001F300-\\U0001FAFF\\u2600-\\u27BF\\uFE00-\\uFEFF]', html); print(len(emoji)); exit(len(emoji))\""
+
+  # JS checks (A4 + A6 + A7)
+  js_no_import_statement:
+    target: 0
+    description: "Count of import/require statements in JS (must be 0 for browser-native execution)"
+    tool: grep
+    check_command: "grep -rE 'import |require\\(' frontend/js/ | wc -l"
+
+  js_no_framework_ref:
+    target: 0
+    description: "Count of framework references in JS files"
+    tool: grep
+    check_command: "grep -ri 'react\\|vue\\|angular\\|jquery\\|bootstrap' frontend/js/ | wc -l"
+
+  # Backend checks (A2 + A7)
+  backend_api_schema:
+    target: "valid"
+    description: "POST /api/game/action returns correct JSON schema (narrative, emotion_value, viewer_count, scene_trigger)"
+    tool: curl+python
+    check_command: "python3 -c \"import json, requests; r=requests.post('http://localhost:8000/api/game/action', json={'session_id':'test','player_input':'hello','timestamp':'2026-01-01T00:00:00Z'}); d=r.json(); assert 'narrative' in d; assert 'emotion_value' in d; assert 'viewer_count' in d; assert 'scene_trigger' in d\""
+
+  backend_pytest_pass:
+    target: 100
+    description: "Percentage of pytest tests passing"
+    tool: pytest
+    check_command: "cd backend && python3 -m pytest test_server.py --tb=short"
+
+  # Frontend file structure (A7)
+  frontend_file_structure:
+    target: "valid"
+    description: "All required frontend files and directories exist"
+    tool: bash
+    check_command: "test -f frontend/index.html && test -f frontend/js/api.js && test -f frontend/js/app.js && test -d frontend/js/scenes && test -d frontend/js/shaders && test -d frontend/css"
+
+  # CRT/Style checks (A7)
+  crt_opacity_check:
+    target: 0.4
+    tolerance: 0.05
+    description: "CRT scanline overlay opacity in [0.35, 0.45]"
+    tool: grep+python
+    check_command: "python3 -c \"import re; c=open('frontend/css/crt.css').read(); m=re.search(r'opacity:\\s*([\\d.]+)', c); print(m.group(1) if m else 'NOT FOUND')\""
+
+  # Shader checks (A4 + A7)
+  ps1_shader_wobble:
+    target: "present"
+    description: "PS1 vertex shader contains wobble effect"
+    tool: grep
+    check_command: "grep -q 'wobble' frontend/js/shaders/ps1_vertex.glsl && echo 'PASS' || echo 'FAIL'"
+
+# ── Execution Phases ─────────────────────────────────────────────────────────
+
+phases:
+  phase_1_research:
+    description: "Technology survey + Frontend scaffold"
+    agents: [tech-survey-agent, frontend-scaffold-agent]
+    parallel: true
+    wave: 1
+
+  phase_2_development:
+    description: "Backend refactor + 3D scenes + CSS UI + API layer"
+    agents: [backend-refactor-agent, threejs-scene-agent, css-ui-agent, api-layer-agent]
+    parallel: true
+    wave: 2
+    depends_on: [phase_1_research]
+
+  phase_3_qa:
+    description: "Automated quality assurance"
+    agents: [qa-integration-agent]
+    parallel: false
+    wave: 3
+    depends_on: [phase_2_development]
+
+  phase_4_publish:
+    description: "Documentation and git push"
+    agents: [docs-publish-agent]
+    parallel: false
+    wave: 4
+    depends_on: [phase_3_qa]
+    condition: "qa-integration-agent.overall_pass == true"

@@ -1,0 +1,17 @@
+/* counters.css - 7-segment display + status bars */
+@font-face { font-family: 'SevenSegment'; src: url('../assets/fonts/seven-segment.woff2') format('woff2'); font-weight: normal; font-style: normal; font-display: swap; }
+
+#viewer-counter { display: inline-flex; align-items: center; gap: 2px; font-family: var(--font-orbitron); font-size: 20px; font-weight: 700; color: var(--color-sick-green); letter-spacing: 2px; text-shadow: 0 0 4px var(--color-sick-green-dim); }
+
+#emotion-bar, #infection-bar { display: flex; align-items: center; gap: 6px; font-family: var(--font-share-tech); font-size: 11px; color: var(--color-text-secondary); }
+
+#emotion-bar .bar-track, #infection-bar .bar-track { width: 120px; height: 10px; background: var(--color-void-black); }
+#emotion-bar .bar-track { border: 1px solid var(--color-cold-cyan); }
+#emotion-bar .bar-fill { height: 100%; background: var(--color-cold-cyan); width: 0%; }
+#infection-bar .bar-track { border: 1px solid var(--color-sick-green-dim); }
+#infection-bar .bar-fill { height: 100%; background: var(--color-sick-green-dim); width: 0%; }
+
+#fragment-counter { font-family: var(--font-orbitron); font-size: 20px; font-weight: 700; color: var(--color-dark-orange); }
+
+@keyframes counter-glitch { 0%, 90%, 100% { opacity: 1; } 92% { opacity: 0.6; } 94% { opacity: 0.9; } 96% { opacity: 0.5; } }
+#viewer-counter.glitching { animation: counter-glitch 0.15s ease-in-out; }
