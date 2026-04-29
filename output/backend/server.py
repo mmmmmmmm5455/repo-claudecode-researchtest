@@ -48,9 +48,10 @@ async def health_check():
 async def new_game():
     session_id = engine.new_session()
     state = engine.get_game_state(session_id)
+    game_log = state.get("game_log", []) if state else []
     return {
         "session_id": session_id,
-        "narrative": state.get("game_log", ["[系統] 新的遊戲會話已建立。"])[-1] if state else "",
+        "narrative": game_log[-1] if game_log else "[系統] 新的遊戲會話已建立。",
         "emotion_value": state.get("emotion_value", 50.0) if state else 50.0,
         "infection_level": state.get("infection_level", 0.0) if state else 0.0,
         "memory_fragments": state.get("memory_fragments", 0) if state else 0,

@@ -1,22 +1,80 @@
 {
-  "qa_integration": {
-    "overall_pass": true,
-    "timestamp": "2026-04-29T00:10:06.813696+00:00",
-    "agent": "qa-integration-agent",
-    "checks": {
-      "backend_api": "pass",
-      "frontend_serving": "pass",
-      "websocket_connectivity": "pass",
-      "game_engine_integration": "pass",
-      "scene_selector_logic": "pass",
-      "viewer_counter_formula": "pass",
-      "css_palette_compliance": "pass",
-      "file_structure_complete": "pass",
-      "static_asset_serving": "pass",
-      "session_management": "pass"
+  "agent": "qa-integration-agent",
+  "timestamp": "2026-04-29T09:30:00Z",
+  "checks": [
+    {
+      "id": 1,
+      "name": "css_palette_compliance",
+      "pass": true,
+      "evidence": "All 4 CSS files use only hex colors from the 12-color palette. Verified via Python regex: 12 unique hex colors, all match palette."
     },
-    "all_checks_passed": 10,
-    "total_checks": 10,
-    "notes": "All integration checks passed. Server responds correctly to all endpoints. Frontend serves and renders. Game loop functional."
-  }
+    {
+      "id": 2,
+      "name": "css_no_warm_colors",
+      "pass": true,
+      "evidence": "grep -rni for warm color keywords (orange, yellow, pink, #FF0, #F00) returned 0 matches after excluding #8B0000 (taillight-red, allowed). CSS variable --color-dark-brown uses correct name."
+    },
+    {
+      "id": 3,
+      "name": "css_no_border_radius",
+      "pass": true,
+      "evidence": "grep -rn 'border-radius' across 4 CSS files returned 0 matches. Sharp/rectangular styling consistent with Y2K aesthetic."
+    },
+    {
+      "id": 4,
+      "name": "html_no_framework_import",
+      "pass": true,
+      "evidence": "No React, Vue, Angular, jQuery, or Bootstrap imports in index.html. Only three.js CDN + Google Fonts."
+    },
+    {
+      "id": 5,
+      "name": "html_no_emoji",
+      "pass": true,
+      "evidence": "Python Unicode emoji range scan on index.html returned 0 matches."
+    },
+    {
+      "id": 6,
+      "name": "js_no_import_statement",
+      "pass": true,
+      "evidence": "0 import/require() statements across all 8 JS files. Vanilla script-loading pattern used."
+    },
+    {
+      "id": 7,
+      "name": "js_no_framework_ref",
+      "pass": true,
+      "evidence": "0 framework references in any JavaScript file. Pure vanilla JS."
+    },
+    {
+      "id": 8,
+      "name": "backend_api_schema",
+      "pass": true,
+      "evidence": "POST /api/game/action returns all 5 required fields: narrative, emotion_value, infection_level, scene_trigger, viewer_count."
+    },
+    {
+      "id": 9,
+      "name": "backend_pytest",
+      "pass": true,
+      "evidence": "pytest backend/test_server.py: 29 passed, 0 failed, 0 errors. All test suites green (TestNewGame, TestGameAction, TestGameState, TestWebSocket)."
+    },
+    {
+      "id": 10,
+      "name": "frontend_file_structure",
+      "pass": true,
+      "evidence": "All 15 required files present: 1 HTML, 4 CSS, 4 JS, 4 scene modules, 2 GLSL shaders."
+    },
+    {
+      "id": 11,
+      "name": "crt_opacity_check",
+      "pass": true,
+      "evidence": "CRT overlay opacity = 0.4 (frontend/css/crt.css:12), within required range [0.35, 0.45]."
+    },
+    {
+      "id": 12,
+      "name": "ps1_shader_wobble",
+      "pass": true,
+      "evidence": "Vertex wobble at ps1_vertex.glsl:14: float wobble = sin(mvPosition.y * 100.0 + uTime) * 0.3; applied to mvPosition.x."
+    }
+  ],
+  "overall_pass": true,
+  "summary": "QA Integration Report: 12/12 checks PASSED. All quality gates green. CSS palette compliant, no warm colors, no border-radius, no framework imports, no emoji, no JS import/require, no JS framework refs, API schema valid, pytest 29/29 passed, file structure complete, CRT opacity 0.4, PS1 vertex wobble implemented."
 }

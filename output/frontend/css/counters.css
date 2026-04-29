@@ -11,7 +11,7 @@
 #infection-bar .bar-track { border: 1px solid var(--color-sick-green-dim); }
 #infection-bar .bar-fill { height: 100%; background: var(--color-sick-green-dim); width: 0%; }
 
-#fragment-counter { font-family: var(--font-orbitron); font-size: 20px; font-weight: 700; color: var(--color-dark-orange); }
+#fragment-counter { font-family: var(--font-orbitron); font-size: 20px; font-weight: 700; color: var(--color-dark-brown); }
 
 @keyframes counter-glitch { 0%, 90%, 100% { opacity: 1; } 92% { opacity: 0.6; } 94% { opacity: 0.9; } 96% { opacity: 0.5; } }
 #viewer-counter.glitching { animation: counter-glitch 0.15s ease-in-out; }
