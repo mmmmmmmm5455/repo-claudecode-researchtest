@@ -110,7 +110,7 @@
 
     setTimeout(function () {
       if (!wsDone) runFallback();
-    }, 12000);
+    }, 5000);
   }
 
   async function fallbackPost(input) {

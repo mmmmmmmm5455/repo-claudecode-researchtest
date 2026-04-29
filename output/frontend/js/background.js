@@ -146,7 +146,12 @@ var BackgroundManager = (function () {
       screenMaterial.uniforms.uPrevScene.value = prevRT.texture;
     }
     if (currentSceneObj && currentSceneObj.dispose) {
-      currentSceneObj.dispose();
+      try {
+        currentSceneObj.dispose();
+      } catch (e) {
+        console.error('Error disposing scene ' + currentSceneName + ':', e);
+      }
+      currentSceneObj = null;
     }
     currentSceneName = sceneName;
     var createFn = window['createScene_' + sceneName];

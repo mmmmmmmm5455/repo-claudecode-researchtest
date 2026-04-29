@@ -7,7 +7,7 @@
 function createScene_snow_bridge() {
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.Fog(0x000000, 8, 30);
+    scene.fog = new THREE.FogExp2(0x003344, 0.0012);
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 150);
     camera.position.set(0, 1.8, 6);
@@ -16,7 +16,7 @@ function createScene_snow_bridge() {
     scene.add(new THREE.AmbientLight(0x000511, 0.05));
 
     // Single streetlight, 1:20 light ratio
-    var streetlight = new THREE.PointLight(0xffcc66, 4.0, 12);
+    var streetlight = new THREE.PointLight(0x00bcd4, 4.0, 12);
     streetlight.position.set(0, 5, -1);
     scene.add(streetlight);
 
@@ -28,7 +28,7 @@ function createScene_snow_bridge() {
 
     // Housing
     var housingMat = new THREE.MeshStandardMaterial({
-        color: 0xffcc44, roughness: 0.3, emissive: 0xffaa22, emissiveIntensity: 2.0, flatShading: true
+        color: 0x1a404a, roughness: 0.3, emissive: 0x006064, emissiveIntensity: 2.0, flatShading: true
     });
     var housing = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.6, 8), housingMat);
     housing.position.set(0, 5.3, -1.5);
@@ -64,7 +64,7 @@ function createScene_snow_bridge() {
     }
     snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
     var snowMat = new THREE.PointsMaterial({
-        color: 0xffffff, size: 0.15, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending
+        color: 0xc0d8f0, size: 0.15, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending
     });
     var snow = new THREE.Points(snowGeo, snowMat);
     scene.add(snow);

@@ -6,7 +6,7 @@
 function createScene_rain_underpass() {
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0d14);
-    scene.fog = new THREE.Fog(0x001a2e, 20, 80);
+    scene.fog = new THREE.Fog(0x001a2e, 10, 80);
 
     var camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.5, 200);
     camera.position.set(0, 1.6, 8);
@@ -48,7 +48,7 @@ function createScene_rain_underpass() {
     scene.add(building);
 
     // Warm window
-    var winMat = new THREE.MeshBasicMaterial({ color: 0xffcc66 });
+    var winMat = new THREE.MeshBasicMaterial({ color: 0x00bcd4 });
     var windowMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.6), winMat);
     windowMesh.position.set(1.4, 2.5, -29);
     scene.add(windowMesh);

@@ -8,7 +8,7 @@
 #system-dialog { z-index: 40; }
 #are-you-real-popup { z-index: 50; }
 
-#dialog-panel { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 720px; height: 50%; max-height: 480px; overflow-y: auto; overflow-x: hidden; background: var(--color-panel-bg); border: 1px solid var(--color-cold-cyan); padding: 16px; font-family: var(--font-vt323); font-size: 18px; line-height: 1.6; color: var(--color-text-primary); }
+#dialog-panel { position: fixed; left: calc(50% - 7px); top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 720px; height: 50%; max-height: 480px; overflow-y: auto; overflow-x: hidden; background: var(--color-panel-bg); border: 1px solid var(--color-cold-cyan); padding: 16px; font-family: var(--font-vt323); font-size: 18px; line-height: 1.6; color: var(--color-text-primary); }
 
 #input-panel { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 720px; background: var(--color-void-black); border: 1px solid var(--color-panel-secondary); padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
 #input-panel .prompt { color: var(--color-sick-green); font-family: var(--font-vt323); font-size: 18px; }

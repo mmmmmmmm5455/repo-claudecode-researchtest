@@ -6,7 +6,7 @@
 function createScene_blizzard_street() {
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0808);
-    scene.fog = new THREE.Fog(0x1a1015, 8, 35);
+    scene.fog = new THREE.Fog(0x001a2e, 8, 35);
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 100);
     camera.position.set(0, 1.5, 5);
@@ -14,7 +14,7 @@ function createScene_blizzard_street() {
     scene.add(new THREE.AmbientLight(0x1a1520, 0.12));
 
     // Distant red emergency light
-    var emergencyLight = new THREE.PointLight(0xcc2233, 0.6, 18);
+    var emergencyLight = new THREE.PointLight(0xff1744, 0.6, 18);
     emergencyLight.position.set(3, 2.5, -10);
     scene.add(emergencyLight);
 
@@ -45,7 +45,7 @@ function createScene_blizzard_street() {
 
     // Red emergency box
     var alarmMat = new THREE.MeshStandardMaterial({
-        color: 0x881111, roughness: 0.5, emissive: 0x440000, emissiveIntensity: 0.5, flatShading: true
+        color: 0x881111, roughness: 0.5, emissive: 0x1a0000, emissiveIntensity: 0.5, flatShading: true
     });
     var alarm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.15), alarmMat);
     alarm.position.set(5.5, 0.5, -8);
