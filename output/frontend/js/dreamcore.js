@@ -116,5 +116,43 @@ var DreamcoreManager = (function () {
     shownFragments = null;
   }
 
-  return { start: start, stop: stop };
+  function triggerFragment(id, delayMs) {
+    delayMs = delayMs || 0;
+    setTimeout(function () {
+      if (!running) return;
+      var frag = null;
+      for (var i = 0; i < fragments.length; i++) {
+        if (fragments[i].id === id) { frag = fragments[i]; break; }
+      }
+      if (!frag || shownFragments.has(frag.id)) return;
+      shownFragments.add(frag.id);
+      var el = createFragmentEl(frag.text);
+      container.appendChild(el);
+      activeEls.push(el);
+      requestAnimationFrame(function () { el.style.opacity = '1'; });
+      setTimeout(function () {
+        el.style.opacity = '0';
+        setTimeout(function () {
+          if (el.parentNode) el.parentNode.removeChild(el);
+          var idx = activeEls.indexOf(el);
+          if (idx >= 0) activeEls.splice(idx, 1);
+        }, 2000);
+      }, 10000);
+      if (activeEls.length > 2) {
+        var oldest = activeEls.shift();
+        oldest.style.opacity = '0';
+        setTimeout(function () { if (oldest.parentNode) oldest.parentNode.removeChild(oldest); }, 2000);
+      }
+    }, delayMs);
+  }
+
+  function triggerBlurOverlay(imageUrl) {
+    var el = document.createElement('div');
+    el.className = 'dreamcore-blur-overlay';
+    if (imageUrl) el.style.backgroundImage = 'url(' + imageUrl + ')';
+    document.body.appendChild(el);
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 6200);
+  }
+
+  return { start: start, stop: stop, triggerFragment: triggerFragment, triggerBlurOverlay: triggerBlurOverlay };
 })();

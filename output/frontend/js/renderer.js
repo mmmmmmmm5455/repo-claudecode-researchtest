@@ -17,6 +17,7 @@
 
   var _timer = null;
   var _infectionLevel = 0;
+  var _glitchIntensity = 1;
   var _zalgoMarks = [
     '̀', '́', '̂', '̃', '̄', '̅', '̆', '̇', '̈',
     '̉', '̊', '̋', '̌', '̍', '̎', '̏',
@@ -47,7 +48,7 @@
   }
 
   function glitchText(text) {
-    if (_infectionLevel <= 70 || !text) return text;
+    if (_infectionLevel <= 70 || !text || _glitchIntensity <= 0) return text;
     var rate = 0.05 + (Math.min(95, _infectionLevel) - 70) / 25 * 0.25;
     var result = '';
     for (var i = 0; i < text.length; i++) {
@@ -156,6 +157,16 @@
     dialog.classList.remove('hidden');
   }
 
+  function setGlitchIntensity(v) {
+    _glitchIntensity = Math.max(0, Math.min(1, v));
+    return _glitchIntensity;
+  }
+
+  function toggleGlitch() {
+    _glitchIntensity = _glitchIntensity > 0 ? 0 : 1;
+    return _glitchIntensity;
+  }
+
   window.GameRenderer = {
     typewriterEffect: typewriterEffect,
     updateViewerCounter: updateViewerCounter,
@@ -164,5 +175,8 @@
     cancelTypewriter: cancelTypewriter,
     setInfectionLevel: setInfectionLevel,
     glitchText: glitchText,
+    setGlitchIntensity: setGlitchIntensity,
+    toggleGlitch: toggleGlitch,
+    getGlitchIntensity: function () { return _glitchIntensity; }
   };
 })();

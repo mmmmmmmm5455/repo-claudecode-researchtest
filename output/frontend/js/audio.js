@@ -478,11 +478,22 @@ var AudioManager = (function () {
     return muted;
   }
 
+  function momentOfSilence(durationMs) {
+    if (!ctx || !masterGain) return;
+    var prevVolume = masterGain.gain.value;
+    var now = ctx.currentTime;
+    masterGain.gain.setValueAtTime(prevVolume, now);
+    masterGain.gain.linearRampToValueAtTime(0, now + 0.1);
+    masterGain.gain.setValueAtTime(0, now + 0.1 + durationMs / 1000);
+    masterGain.gain.linearRampToValueAtTime(prevVolume, now + 0.1 + durationMs / 1000 + 0.5);
+  }
+
   return {
     init: init,
     switchScene: switchScene,
     dispose: dispose,
     setMasterVolume: setMasterVolume,
-    toggleMute: toggleMute
+    toggleMute: toggleMute,
+    momentOfSilence: momentOfSilence
   };
 })();

@@ -80,6 +80,16 @@
         }
       }
     });
+
+    // P1-DREAMCORE-04: [G] toggles zalgo glitch intensity
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'g' || e.key === 'G') {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (typeof window.GameRenderer !== 'undefined' && window.GameRenderer.toggleGlitch) {
+          window.GameRenderer.toggleGlitch();
+        }
+      }
+    });
   }
 
   // ---- Send Handler ----
@@ -214,6 +224,25 @@
 
     if (data.scene_trigger && data.scene_trigger !== currentScene) {
       currentScene = data.scene_trigger;
+
+      // P1-DREAMCORE-02: 2-second silence before scene transition
+      if (typeof AudioManager !== 'undefined' && AudioManager.momentOfSilence) {
+        AudioManager.momentOfSilence(2000);
+      }
+
+      // P1-DREAMCORE-03: Dreamcore fragment 3-8s after hook trigger
+      if (typeof DreamcoreManager !== 'undefined' && DreamcoreManager.triggerFragment) {
+        var hookFragMap = {
+          rain_underpass: 'F1',
+          snow_bridge: 'F4',
+          fog_highway: 'F2',
+          blizzard_street: 'F6'
+        };
+        var fragId = hookFragMap[data.scene_trigger] || 'F3';
+        var fragDelay = 3000 + Math.random() * 5000;
+        DreamcoreManager.triggerFragment(fragId, fragDelay);
+      }
+
       var switched = true;
       if (typeof BackgroundManager !== 'undefined') {
         BackgroundManager.switchScene(data.scene_trigger);
