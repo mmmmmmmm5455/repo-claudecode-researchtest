@@ -93,7 +93,40 @@ function createScene_fog_highway() {
         scene.add(wreckGroup);
     }
 
-    // Fog particles
+    // Dreamcore memory clue: distant warm tail light in fog (approx 2800K)
+    var tailLight = new THREE.PointLight(0xdd7733, 0.25, 20);
+    tailLight.position.set(-2, 0.3, -28);
+    scene.add(tailLight);
+
+    // Dreamcore memory trace: torn paper note on roadside
+    var noteCanvas = document.createElement('canvas');
+    noteCanvas.width = 64; noteCanvas.height = 32;
+    var nctx = noteCanvas.getContext('2d');
+    nctx.fillStyle = '#d4ccb8'; nctx.fillRect(0, 0, 64, 32);
+    nctx.fillStyle = '#999080'; nctx.fillRect(28, 4, 1, 24);
+    nctx.strokeStyle = '#888070'; nctx.lineWidth = 1;
+    nctx.beginPath(); nctx.moveTo(30, 8); nctx.lineTo(48, 7); nctx.stroke();
+    nctx.beginPath(); nctx.moveTo(30, 14); nctx.lineTo(52, 13); nctx.stroke();
+    nctx.beginPath(); nctx.moveTo(30, 20); nctx.lineTo(44, 19); nctx.stroke();
+    // Torn edge
+    nctx.fillStyle = '#d4ccb8'; nctx.fillRect(0, 0, 64, 32);
+    nctx.clearRect(0, 0, 8, 32);
+    nctx.fillStyle = '#d4ccb8';
+    nctx.beginPath(); nctx.moveTo(8, 0); nctx.lineTo(10, 6); nctx.lineTo(7, 12);
+    nctx.lineTo(11, 18); nctx.lineTo(8, 24); nctx.lineTo(9, 30); nctx.lineTo(8, 32);
+    nctx.lineTo(8, 0); nctx.fill();
+    var noteTex = new THREE.CanvasTexture(noteCanvas);
+    noteTex.minFilter = THREE.NearestFilter; noteTex.magFilter = THREE.NearestFilter;
+    var noteMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.5, 0.25),
+        new THREE.MeshBasicMaterial({ map: noteTex, transparent: true, opacity: 0.5, depthTest: true })
+    );
+    noteMesh.rotation.x = -Math.PI / 2 + 0.03;
+    noteMesh.position.set(-3.5, -1.12, -5);
+    noteMesh.name = 'memory_note';
+    scene.add(noteMesh);
+
+        // Fog particles
     var fogCount = 300;
     var fogGeo = new THREE.BufferGeometry();
     var fogPositions = new Float32Array(fogCount * 3);

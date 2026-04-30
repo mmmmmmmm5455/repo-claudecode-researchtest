@@ -85,7 +85,30 @@ function createScene_snow_bridge() {
         if (isFourth) fourthWindow = wMesh;
     }
 
-    // H4: Footprints in snow (visit >= 2)
+    // Dreamcore memory clue: warm ember point light on bridge surface (approx 3000K)
+    var emberLight = new THREE.PointLight(0xffaa66, 0.3, 6);
+    emberLight.position.set(-2.5, -0.2, -2);
+    scene.add(emberLight);
+
+    // Dreamcore memory trace: faded photograph on bridge surface
+    var photoCanvas = document.createElement('canvas');
+    photoCanvas.width = 64; photoCanvas.height = 48;
+    var pctx = photoCanvas.getContext('2d');
+    pctx.fillStyle = '#ccaa88'; pctx.fillRect(0, 0, 64, 48);
+    pctx.fillStyle = '#886644'; pctx.fillRect(8, 6, 20, 16);
+    pctx.fillStyle = '#aa9977'; pctx.fillRect(36, 8, 14, 20);
+    var photoTex = new THREE.CanvasTexture(photoCanvas);
+    photoTex.minFilter = THREE.NearestFilter; photoTex.magFilter = THREE.NearestFilter;
+    var photoMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.4, 0.3),
+        new THREE.MeshBasicMaterial({ map: photoTex, transparent: true, opacity: 0.6, depthTest: true })
+    );
+    photoMesh.rotation.x = -Math.PI / 2 + 0.05;
+    photoMesh.position.set(-2.8, -0.34, -3.5);
+    photoMesh.name = 'memory_photo';
+    scene.add(photoMesh);
+
+        // H4: Footprints in snow (visit >= 2)
     if (isRevisit && visitCount >= 2) {
         var fpMat = new THREE.MeshStandardMaterial({ color: 0x8098b0, roughness: 1.0, flatShading: true });
         for (var fi = 0; fi < 8; fi++) {

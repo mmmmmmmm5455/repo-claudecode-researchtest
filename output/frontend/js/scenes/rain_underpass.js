@@ -14,7 +14,7 @@ function createScene_rain_underpass() {
 
     // Lighting: low ambient + single distant warm window
     scene.add(new THREE.AmbientLight(0x1a2530, 0.3));
-    var windowLight = new THREE.PointLight(0xffaa44, 0.8, 30);
+    var windowLight = new THREE.PointLight(0x00bcd4, 0.8, 30);
     windowLight.position.set(0, 3, -25);
     scene.add(windowLight);
 
@@ -82,7 +82,27 @@ function createScene_rain_underpass() {
         scene.add(graffitiMesh);
     }
 
-    // Rain particle system (600 drops)
+    // Dreamcore memory clue: warm light in distant second window (approx 3200K)
+    var memoryWindowLight = new THREE.PointLight(0xff8844, 0.25, 12);
+    memoryWindowLight.position.set(-1.5, 2.5, -28);
+    scene.add(memoryWindowLight);
+
+    // Dreamcore memory trace: unexplainable key on the ground
+    var keyHeadGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.03, 8);
+    var keyShaftGeo = new THREE.BoxGeometry(0.03, 0.02, 0.18);
+    var keyMat = new THREE.MeshStandardMaterial({ color: 0x8899aa, roughness: 0.3, metalness: 0.6, flatShading: true });
+    var keyHead = new THREE.Mesh(keyHeadGeo, keyMat);
+    keyHead.rotation.x = Math.PI / 2;
+    keyHead.position.set(4.2, -0.48, -4);
+    var keyShaft = new THREE.Mesh(keyShaftGeo, keyMat);
+    keyShaft.position.set(4.2, -0.48, -4.1);
+    var keyGroup = new THREE.Group();
+    keyGroup.add(keyHead);
+    keyGroup.add(keyShaft);
+    keyGroup.name = 'memory_key';
+    scene.add(keyGroup);
+
+        // Rain particle system (600 drops)
     var rainCount = 600;
     var rainGeo = new THREE.BufferGeometry();
     var rainPositions = new Float32Array(rainCount * 3);
@@ -130,6 +150,7 @@ function createScene_rain_underpass() {
     }
 
     function dispose() {
+        flickerAlive = false;
         scene.traverse(function(obj) {
             if (obj.geometry) obj.geometry.dispose();
             if (obj.material) {

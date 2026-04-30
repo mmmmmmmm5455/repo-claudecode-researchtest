@@ -85,7 +85,28 @@ function createScene_blizzard_street() {
         scene.add(blinkPlane);
     }
 
-    // Snow particles (8px motion blur via size + velocity)
+    // Dreamcore memory clue: warm window in distant building (approx 3400K)
+    var warmWin = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.35, 0.5),
+        new THREE.MeshBasicMaterial({ color: 0xffaa66 })
+    );
+    warmWin.position.set(-6.2, 2.6, -14);
+    scene.add(warmWin);
+
+    // Dreamcore memory trace: small locket on the snow
+    var locketGeo = new THREE.SphereGeometry(0.06, 6, 4);
+    var locketMat = new THREE.MeshStandardMaterial({ color: 0xbb9955, roughness: 0.2, metalness: 0.7, flatShading: true });
+    var locket = new THREE.Mesh(locketGeo, locketMat);
+    locket.position.set(-3.2, -0.46, 1);
+    locket.name = 'memory_locket';
+    scene.add(locket);
+    // Small chain
+    var chainGeo = new THREE.TorusGeometry(0.04, 0.012, 4, 6);
+    var chainLink = new THREE.Mesh(chainGeo, locketMat);
+    chainLink.position.set(-3.2, -0.39, 1);
+    scene.add(chainLink);
+
+        // Snow particles (8px motion blur via size + velocity)
     var snowCount = 500;
     var snowGeo = new THREE.BufferGeometry();
     var snowPositions = new Float32Array(snowCount * 3);

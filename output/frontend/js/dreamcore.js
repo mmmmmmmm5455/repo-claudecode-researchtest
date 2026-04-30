@@ -1,36 +1,37 @@
-/* dreamcore.js — Dreamcore fragment overlay system (P2-DREAM-01/02, refactored)
- * Displays cryptic text fragments with trigger conditions at random screen positions.
- * F1-F10 from design spec, each fires at most once per session (Set-based).
- * Interval: 45-240s, drops to min 30s when infection > 70.
+/* dreamcore.js — Dreamcore fragment overlay system (P2-DREAM-01/02, Liminal refactor)
+ * Displays nostalgic/confused text fragments at random screen positions.
+ * Exploration-reward design: triggers on time-in-scene, emotional state, visits — not infection.
+ * F1-F10 each fires at most once per session (Set-based).
+ * Interval: 45-240s, drops to min 30s when scenes explored >= 3.
  * Exports: DreamcoreManager { start, stop }
  */
 var DreamcoreManager = (function () {
   'use strict';
 
   var fragments = [
-    { id: 'F1', text: 'are you still there',   cond: function (a) { return a.infectionLevel >= 20; } },
-    { id: 'F2', text: 'this is not a place',    cond: function (a) { return a.infectionLevel >= 30; } },
-    { id: 'F3', text: 'you have been here before', cond: function (a) { return a.totalVisits() >= 2; } },
-    { id: 'F4', text: 'they are watching through the screen', cond: function (a) { return a.viewerCount >= 2; } },
-    { id: 'F5', text: 'the signal is decaying', cond: function (a) { return a.infectionLevel >= 50; } },
-    { id: 'F6', text: 'don\'t trust the viewer count', cond: function (a) { return a.viewerCount >= 1 && a.infectionLevel >= 40; } },
-    { id: 'F7', text: 'this space has no exit', cond: function (a) { return a.memoryFragments >= 5 && a.visitedScenes.size >= 3; } },
-    { id: 'F8', text: 'your body is not here',  cond: function (a) { return a.infectionLevel >= 65; } },
-    { id: 'F9', text: 'they rebuilt it wrong',  cond: function (a) { return a.visitedScenes.size >= 4; } },
-    { id: 'F10', text: 'wake up',               cond: function (a) { return a.infectionLevel >= 90; } }
+    { id: 'F1', text: 'do you remember this place',     cond: function (a) { return a.getTimeInScene() >= 60; } },
+    { id: 'F2', text: 'this place feels familiar somehow', cond: function (a) { return a.visitedScenes.size >= 1 && a.emotionLevel >= 30; } },
+    { id: 'F3', text: 'you have been here before',       cond: function (a) { return a.totalVisits() >= 2; } },
+    { id: 'F4', text: 'someone was here, just now',      cond: function (a) { return a.visitedScenes.size >= 2 && a.getTimeInScene() >= 120; } },
+    { id: 'F5', text: 'the signal is fading, like a memory', cond: function (a) { return a.memoryFragments >= 2; } },
+    { id: 'F6', text: 'some things are better left unseen', cond: function (a) { return a.visitedScenes.size >= 3; } },
+    { id: 'F7', text: 'maybe there was never an exit',    cond: function (a) { return a.getTimeInScene() >= 180 && a.memoryFragments >= 3; } },
+    { id: 'F8', text: 'you left something behind',       cond: function (a) { return a.visitedScenes.size >= 3 && a.totalVisits() >= 4; } },
+    { id: 'F9', text: "it's different from how you remember", cond: function (a) { return a.visitedScenes.size >= 4; } },
+    { id: 'F10', text: "you're already awake",            cond: function (a) { return a.visitedScenes.size >= 4 && a.memoryFragments >= 5 && a.totalVisits() >= 7; } }
   ];
 
   var container = null;
   var activeEls = [];
   var timerId = null;
   var running = false;
-  var shownFragments = null; // Set — tracks which fragment IDs have fired
+  var shownFragments = null;
 
   function getApp() { return (typeof window !== 'undefined' && window.App) ? window.App : null; }
 
   function getInterval() {
     var app = getApp();
-    var minMs = (app && app.infectionLevel > 70) ? 30000 : 45000;
+    var minMs = (app && app.visitedScenes && app.visitedScenes.size >= 3) ? 30000 : 45000;
     var maxMs = 240000;
     return minMs + Math.random() * (maxMs - minMs);
   }
@@ -38,7 +39,6 @@ var DreamcoreManager = (function () {
   function pickEligibleFragment() {
     var app = getApp();
     if (!app) return null;
-    // Shuffle and pick first eligible fragment not yet shown
     var candidates = fragments.slice();
     // Fisher-Yates shuffle
     for (var i = candidates.length - 1; i > 0; i--) {
@@ -68,7 +68,6 @@ var DreamcoreManager = (function () {
     if (!running || !container) return;
     var frag = pickEligibleFragment();
     if (!frag) {
-      // No eligible fragment — retry later
       timerId = setTimeout(spawnFragment, getInterval());
       return;
     }
@@ -105,7 +104,6 @@ var DreamcoreManager = (function () {
     container.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:55;';
     document.body.appendChild(container);
     running = true;
-    // First fragment after 45-120s delay
     timerId = setTimeout(spawnFragment, 45000 + Math.random() * 75000);
   }
 

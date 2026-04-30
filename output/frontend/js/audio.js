@@ -267,6 +267,85 @@ var AudioManager = (function () {
     };
   }
 
+  // ---- Dreamcore music box fragments (distant, lo-fi, emotion-gated) ----
+  var musicBoxActive = true;
+  var musicBoxTimer = null;
+
+  function scheduleMusicBoxFragment() {
+    if (!musicBoxActive || !ctx) return;
+    // Only trigger when emotion is very low (<= 30) — quiet, nostalgic moments
+    var emotion = (typeof window !== 'undefined' && window.App) ? (window.App.emotionLevel || 0) : 0;
+    if (emotion > 30) {
+      // Emotion too high — check again later
+      musicBoxTimer = setTimeout(scheduleMusicBoxFragment, 30000 + Math.random() * 30000);
+      return;
+    }
+    playMusicBoxFragment();
+    var next = 60000 + Math.random() * 120000;
+    musicBoxTimer = setTimeout(scheduleMusicBoxFragment, next);
+  }
+
+  function playMusicBoxFragment() {
+    if (!ctx) return;
+    var now = ctx.currentTime;
+
+    // Simple 4-note melody: root, fifth, octave, fifth (pentatonic fragment)
+    var melody = [
+      { freq: 880, start: 0, dur: 0.4 },
+      { freq: 1320, start: 0.5, dur: 0.35 },
+      { freq: 1760, start: 1.0, dur: 0.5 },
+      { freq: 1320, start: 1.6, dur: 0.35 }
+    ];
+
+    for (var n = 0; n < melody.length; n++) {
+      var note = melody[n];
+      var t = now + note.start;
+
+      // Fundamental
+      var osc1 = ctx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.value = note.freq + (Math.random() - 0.5) * 6;
+
+      // Overtone (octave above, softer)
+      var osc2 = ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = note.freq * 2 + (Math.random() - 0.5) * 10;
+
+      // Quick percussive envelope
+      var env = ctx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(0.025, t + 0.01);
+      env.gain.exponentialRampToValueAtTime(0.001, t + note.dur);
+
+      // Distant bandpass (sounds like through a wall)
+      var filt = ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.value = 800 + Math.random() * 600;
+      filt.Q.value = 1.5;
+
+      osc1.connect(filt);
+      osc2.connect(filt);
+      filt.connect(env);
+      env.connect(masterGain);
+
+      osc1.start(t);
+      osc1.stop(t + note.dur + 0.1);
+      osc2.start(t);
+      osc2.stop(t + note.dur + 0.1);
+    }
+  }
+
+  function startMusicBox() {
+    if (musicBoxTimer) return;
+    musicBoxActive = true;
+    musicBoxTimer = setTimeout(scheduleMusicBoxFragment, 30000 + Math.random() * 60000);
+  }
+
+  function stopMusicBox() {
+    musicBoxActive = false;
+    if (musicBoxTimer) { clearTimeout(musicBoxTimer); musicBoxTimer = null; }
+  }
+
   // ---- Public API ----
 
   function init() {
@@ -341,6 +420,9 @@ var AudioManager = (function () {
     var newNodes = { drone: newDrone, env: newEnv, drips: newDrips, sceneId: sceneId };
     activeNodes[sceneId] = newNodes;
 
+    // Start music box fragments (persistent, emotion-gated)
+    startMusicBox();
+
     // Ramp in new audio
     var now = ctx.currentTime;
     var rampEnd = now + crossfadeMs / 1000;
@@ -369,6 +451,7 @@ var AudioManager = (function () {
   }
 
   function dispose() {
+    stopMusicBox();
     var scenes = Object.keys(activeNodes);
     for (var i = 0; i < scenes.length; i++) {
       disposeNodes(activeNodes[scenes[i]]);

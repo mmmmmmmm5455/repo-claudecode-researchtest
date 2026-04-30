@@ -179,6 +179,9 @@
         window.GameRenderer.setInfectionLevel(data.infection_level != null ? data.infection_level : 0);
       }
     }
+    if (data.emotion_value !== undefined) {
+      window.App.emotionLevel = data.emotion_value;
+    }
     if (data.infection_level !== undefined) {
       window.App.infectionLevel = data.infection_level;
     }
@@ -221,6 +224,7 @@
       // Update visit tracking AFTER successful scene switch
       window.App.visitedScenes.add(data.scene_trigger);
       window.App.visitCounts[data.scene_trigger] = (window.App.visitCounts[data.scene_trigger] || 0) + 1;
+      window.App.sceneEntryTime = Date.now();
       updateLocationDisplay(data.scene_trigger);
     }
     if (data.system_event) {
@@ -250,8 +254,11 @@
     visitCounts: {},
     infectionLevel: 0,
     memoryFragments: 0,
+    emotionLevel: 0,
     viewerCount: 1,
     viewerBumped: false,
+    sceneEntryTime: Date.now(),
+    getTimeInScene: function () { return (Date.now() - this.sceneEntryTime) / 1000; },
     totalVisits: function () { var s = 0; for (var k in this.visitCounts) { s += this.visitCounts[k]; } return s; }
   };
 })();
