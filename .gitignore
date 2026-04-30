@@ -12,4 +12,17 @@ output/quality_report.json
 *.db
 *.sqlite
 node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
+
 .checkpoints/
