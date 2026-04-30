@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JS Contract Test Harness</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+    .pass { color: #0f0; } .fail { color: #f00; }
+    pre { background: #222; padding: 8px; }
+  </style>
+</head>
+<body>
+<h1>API Layer Contract Tests</h1>
+<div id="results"></div>
+
+<!-- DOM stubs for renderer tests -->
+<div id="viewer-counter" class="seven-segment">00</div>
+<div id="emotion-fill" style="width:0%"></div>
+<div id="infection-fill" style="width:0%"></div>
+<div id="fragment-counter" class="seven-segment">00</div>
+<div id="dialog-content">[dialog]</div>
+<div id="system-dialog" class="hidden">
+  <div id="system-dialog-header"></div>
+  <div id="system-dialog-body"></div>
+  <button id="system-dialog-close">OK</button>
+</div>
+<div id="location-display"></div>
+<div id="input-field"><input></div>
+<button id="send-button">SEND</button>
+
+<script src="js/api.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/app.js"></script>
+<script>
+(function () {
+  var results = document.getElementById('results');
+  var passed = 0, failed = 0;
+
+  function assert(cond, label) {
+    var div = document.createElement('div');
+    if (cond) { div.className = 'pass'; div.textContent = 'PASS: ' + label; passed++; }
+    else { div.className = 'fail'; div.textContent = 'FAIL: ' + label; failed++; }
+    results.appendChild(div);
+  }
+
+  function assertThrows(fn, label) {
+    try { fn(); assert(false, label + ' (no throw)'); }
+    catch (_) { assert(true, label + ' (throws as expected)'); }
+  }
+
+  // ---- api.js contract ----
+  assert(typeof window.GameAPI !== 'undefined', 'GameAPI exists on window');
+  assert(typeof window.GameAPI.sendAction === 'function', 'GameAPI.sendAction is function');
+  assert(typeof window.GameAPI.connectWebSocket === 'function', 'GameAPI.connectWebSocket is function');
+  assert(typeof window.GameAPI.getGameState === 'function', 'GameAPI.getGameState is function');
+  assert(typeof window.GameAPI.newSession === 'function', 'GameAPI.newSession is function');
+
+  // ---- renderer.js contract ----
+  assert(typeof window.GameRenderer !== 'undefined', 'GameRenderer exists on window');
+  assert(typeof window.GameRenderer.typewriterEffect === 'function', 'GameRenderer.typewriterEffect is function');
+  assert(typeof window.GameRenderer.updateViewerCounter === 'function', 'GameRenderer.updateViewerCounter is function');
+  assert(typeof window.GameRenderer.updateStatusBars === 'function', 'GameRenderer.updateStatusBars is function');
+  assert(typeof window.GameRenderer.showSystemDialog === 'function', 'GameRenderer.showSystemDialog is function');
+  assert(typeof window.GameRenderer.cancelTypewriter === 'function', 'GameRenderer.cancelTypewriter is function');
+
+  // typewriterEffect: Unicode-safe character iteration
+  var target = document.createElement('div');
+  window.GameRenderer.typewriterEffect('Hello', target, 1);
+  // After 200ms the full text should be written (5 chars at 1ms each)
+  setTimeout(function () {
+    assert(target.textContent === 'Hello', 'typewriterEffect writes full text (ASCII)');
+
+    var target2 = document.createElement('div');
+    window.GameRenderer.typewriterEffect('你好', target2, 1);  // Unicode test
+    setTimeout(function () {
+      assert(target2.textContent === '你好', 'typewriterEffect writes Unicode (Array.from safe)');
+    }, 100);
+  }, 200);
+
+  // updateViewerCounter
+  window.GameRenderer.updateViewerCounter(5);
+  assert(document.getElementById('viewer-counter').textContent === '05', 'updateViewerCounter(5) -> 05');
+  window.GameRenderer.updateViewerCounter(99);
+  assert(document.getElementById('viewer-counter').textContent === '99', 'updateViewerCounter(99) -> 99');
+  window.GameRenderer.updateViewerCounter(150);
+  assert(document.getElementById('viewer-counter').textContent === '99', 'updateViewerCounter(150) clamps to 99');
+  window.GameRenderer.updateViewerCounter(0);
+  assert(document.getElementById('viewer-counter').textContent === '01', 'updateViewerCounter(0) clamps to 01');
+
+  // updateStatusBars
+  window.GameRenderer.updateStatusBars(50, 30, 7);
+  assert(document.getElementById('emotion-fill').style.width === '50%', 'emotion bar at 50%');
+  assert(document.getElementById('infection-fill').style.width === '30%', 'infection bar at 30%');
+  assert(document.getElementById('fragment-counter').textContent === '07', 'fragment counter 07');
+  window.GameRenderer.updateStatusBars(150, -10, 999);
+  assert(document.getElementById('emotion-fill').style.width === '100%', 'emotion bar clamps at 100%');
+  assert(document.getElementById('infection-fill').style.width === '0%', 'infection bar clamps at 0%');
+  assert(document.getElementById('fragment-counter').textContent === '99', 'fragment counter clamps at 99');
+
+  // showSystemDialog
+  window.GameRenderer.showSystemDialog('critical_infection');
+  assert(!document.getElementById('system-dialog').classList.contains('hidden'), 'showSystemDialog shows dialog');
+  assert(document.getElementById('system-dialog-header').textContent.length > 0, 'dialog header set');
+  assert(document.getElementById('system-dialog-body').textContent.length > 0, 'dialog body set');
+  window.GameRenderer.showSystemDialog(null);
+  assert(document.getElementById('system-dialog').classList.contains('hidden'), 'showSystemDialog(null) hides dialog');
+
+  // showSystemDialog unknown event
+  window.GameRenderer.showSystemDialog('custom_event');
+  assert(!document.getElementById('system-dialog').classList.contains('hidden'), 'unknown event type shows dialog');
+  window.GameRenderer.showSystemDialog(null);
+
+  // cancelTypewriter (stops running timer)
+  window.GameRenderer.typewriterEffect('long text that should be cancelled', document.createElement('div'), 100);
+  window.GameRenderer.cancelTypewriter();
+  assert(true, 'cancelTypewriter does not throw');
+
+  // ---- app.js contract ----
+  assert(typeof window.App !== 'undefined', 'App exists on window');
+  assert(typeof window.App.handleSend === 'function', 'App.handleSend is function');
+  assert(typeof window.App.applyGameResponse === 'function', 'App.applyGameResponse is function');
+  assert(typeof window.App.initGame === 'function', 'App.initGame is function');
+
+  // summary
+  setTimeout(function () {
+    var summary = document.createElement('h2');
+    summary.textContent = passed + ' passed, ' + failed + ' failed out of ' + (passed + failed);
+    results.appendChild(summary);
+  }, 500);
+})();
+</script>
+</body>
+</html>
