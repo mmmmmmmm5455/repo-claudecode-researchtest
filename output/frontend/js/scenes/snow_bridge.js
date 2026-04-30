@@ -7,9 +7,9 @@
  */
 function createScene_snow_bridge() {
     var scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x003344, 0.0012);
-    scene.userData.fogDensityBase = 0.0012;
+    scene.background = new THREE.Color(0x050a10);
+    scene.fog = new THREE.FogExp2(0x0a3a50, 0.0015);
+    scene.userData.fogDensityBase = 0.0015;
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 150);
     camera.position.set(0, 1.8, 6);
@@ -19,10 +19,10 @@ function createScene_snow_bridge() {
     var isRevisit = window.App && window.App.visitedScenes && window.App.visitedScenes.has('snow_bridge');
 
     // Minimal ambient — 70% dead black requirement
-    scene.add(new THREE.AmbientLight(0x000511, 0.05));
+    scene.add(new THREE.AmbientLight(0x0a1520, 0.08));
 
     // Single streetlight, 1:20 light ratio
-    var streetlight = new THREE.PointLight(0x00bcd4, 4.0, 12);
+    var streetlight = new THREE.PointLight(0x00d4f0, 4.5, 14);
     streetlight.position.set(0, 5, -1);
     scene.add(streetlight);
 
@@ -34,14 +34,14 @@ function createScene_snow_bridge() {
 
     // Housing
     var housingMat = new THREE.MeshStandardMaterial({
-        color: 0x1a404a, roughness: 0.3, emissive: 0x006064, emissiveIntensity: 2.0, flatShading: true
+        color: 0x1a4a55, roughness: 0.3, emissive: 0x007a80, emissiveIntensity: 2.5, flatShading: true
     });
     var housing = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.6, 8), housingMat);
     housing.position.set(0, 5.3, -1.5);
     scene.add(housing);
 
     // Bridge surface
-    var bridgeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 1.0, flatShading: true });
+    var bridgeMat = new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1.0, flatShading: true });
     var bridge = new THREE.Mesh(new THREE.BoxGeometry(8, 0.3, 30), bridgeMat);
     bridge.position.y = -0.5;
     scene.add(bridge);
@@ -86,7 +86,7 @@ function createScene_snow_bridge() {
     }
 
     // Dreamcore memory clue: warm ember point light on bridge surface (approx 3000K)
-    var emberLight = new THREE.PointLight(0xffaa66, 0.3, 6);
+    var emberLight = new THREE.PointLight(0xffab00, 0.35, 8);
     emberLight.position.set(-2.5, -0.2, -2);
     scene.add(emberLight);
 
@@ -138,6 +138,24 @@ function createScene_snow_bridge() {
     var snow = new THREE.Points(snowGeo, snowMat);
     scene.add(snow);
 
+    // Film grain overlay (PS1 noise, 15% opacity — subtle in darkness)
+    var grainCount = 150;
+    var grainGeo = new THREE.BufferGeometry();
+    var grainPositions = new Float32Array(grainCount * 3);
+    for (var gi = 0; gi < grainCount; gi++) {
+        grainPositions[gi * 3] = (Math.random() - 0.5) * 16;
+        grainPositions[gi * 3 + 1] = (Math.random() - 0.5) * 10;
+        grainPositions[gi * 3 + 2] = -1;
+    }
+    grainGeo.setAttribute('position', new THREE.BufferAttribute(grainPositions, 3));
+    var grainMat = new THREE.PointsMaterial({
+        color: 0xffffff, size: 0.04, transparent: true, opacity: 0.15,
+        blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false
+    });
+    var grain = new THREE.Points(grainGeo, grainMat);
+    grain.position.z = -1;
+    scene.add(grain);
+
     function animate(dt, elapsed) {
         var pos = snow.geometry.attributes.position.array;
         for (var i = 0; i < snowCount; i++) {
@@ -149,8 +167,15 @@ function createScene_snow_bridge() {
             }
         }
         snow.geometry.attributes.position.needsUpdate = true;
+        // Film grain random update
+        var gpos = grain.geometry.attributes.position.array;
+        for (var gi = 0; gi < grainCount; gi++) {
+            gpos[gi * 3] = (Math.random() - 0.5) * 16;
+            gpos[gi * 3 + 1] = (Math.random() - 0.5) * 10;
+        }
+        grain.geometry.attributes.position.needsUpdate = true;
         var flicker = 1.0 - Math.random() * 0.05;
-        streetlight.intensity = 4.0 * flicker;
+        streetlight.intensity = 4.5 * flicker;
     }
 
     function dispose() {

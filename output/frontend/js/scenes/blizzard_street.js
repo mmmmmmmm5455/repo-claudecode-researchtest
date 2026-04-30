@@ -6,8 +6,8 @@
  */
 function createScene_blizzard_street() {
     var scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0808);
-    scene.fog = new THREE.Fog(0x001a2e, 8, 35);
+    scene.background = new THREE.Color(0x0c0e12);
+    scene.fog = new THREE.Fog(0x0a2a3e, 8, 28);
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 100);
     camera.position.set(0, 1.5, 5);
@@ -16,7 +16,7 @@ function createScene_blizzard_street() {
     var infected = (window.App && window.App.infectionLevel) || 0;
     var isRevisit = window.App && window.App.visitedScenes && window.App.visitedScenes.has('blizzard_street');
 
-    scene.add(new THREE.AmbientLight(0x1a1520, 0.12));
+    scene.add(new THREE.AmbientLight(0x151a25, 0.12));
 
     // Distant red emergency light
     var emergencyLight = new THREE.PointLight(0xff1744, 0.6, 18);
@@ -25,7 +25,7 @@ function createScene_blizzard_street() {
 
     // H9: Streetlight — burns out on revisit (visit >= 2)
     var slIntensity = (isRevisit && visitCount >= 2) ? 0 : 0.4;
-    var streetLight = new THREE.PointLight(0xaaccff, slIntensity, 14);
+    var streetLight = new THREE.PointLight(0x88bbff, slIntensity, 14);
     streetLight.position.set(-4, 4, -5);
     scene.add(streetLight);
 
@@ -48,14 +48,14 @@ function createScene_blizzard_street() {
     if (isRevisit && infected > 50) scheduleAlarmBlink();
 
     // Snow-covered ground
-    var groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1820, roughness: 0.9, flatShading: true });
+    var groundMat = new THREE.MeshStandardMaterial({ color: 0x181a22, roughness: 0.9, flatShading: true });
     var ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 50, 16, 32), groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -1.5;
     scene.add(ground);
 
     // Buildings
-    var bldgMat = new THREE.MeshStandardMaterial({ color: 0x0e0c10, roughness: 1.0, flatShading: true });
+    var bldgMat = new THREE.MeshStandardMaterial({ color: 0x0e1015, roughness: 1.0, flatShading: true });
     for (var z = -20; z <= -5; z += 5) {
         var h = 3 + Math.random() * 5;
         var w = 2 + Math.random() * 3;
@@ -69,7 +69,7 @@ function createScene_blizzard_street() {
 
     // Red emergency box
     var alarmMat = new THREE.MeshStandardMaterial({
-        color: 0x881111, roughness: 0.5, emissive: 0x1a0000, emissiveIntensity: 0.5, flatShading: true
+        color: 0x881111, roughness: 0.5, emissive: 0x2a0000, emissiveIntensity: 0.8, flatShading: true
     });
     var alarm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.15), alarmMat);
     alarm.position.set(5.5, 0.5, -8);
@@ -78,7 +78,7 @@ function createScene_blizzard_street() {
     // H10: Emergency alarm blinking overlay (small emissive plane on building)
     if (isRevisit && infected > 50) {
         var blinkGeo = new THREE.PlaneGeometry(0.3, 0.3);
-        var blinkMat = new THREE.MeshBasicMaterial({ color: 0x00bcd4 });
+        var blinkMat = new THREE.MeshBasicMaterial({ color: 0x00d4f0 });
         var blinkPlane = new THREE.Mesh(blinkGeo, blinkMat);
         blinkPlane.position.set(3.2, 2.6, -9);
         blinkPlane.name = 'hook_emergency_blink';
@@ -88,7 +88,7 @@ function createScene_blizzard_street() {
     // Dreamcore memory clue: warm window in distant building (approx 3400K)
     var warmWin = new THREE.Mesh(
         new THREE.PlaneGeometry(0.35, 0.5),
-        new THREE.MeshBasicMaterial({ color: 0xffaa66 })
+        new THREE.MeshBasicMaterial({ color: 0xffab00 })
     );
     warmWin.position.set(-6.2, 2.6, -14);
     scene.add(warmWin);
@@ -135,7 +135,7 @@ function createScene_blizzard_street() {
     }
     grainGeo.setAttribute('position', new THREE.BufferAttribute(grainPositions, 3));
     var grainMat = new THREE.PointsMaterial({
-        color: 0xffffff, size: 0.03, transparent: true, opacity: 0.25,
+        color: 0xffffff, size: 0.03, transparent: true, opacity: 0.30,
         blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false
     });
     var grain = new THREE.Points(grainGeo, grainMat);
