@@ -7,8 +7,8 @@
 function createScene_fog_highway() {
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1c20);
-    scene.fog = new THREE.FogExp2(0x8a9bb0, 0.0015);
-    scene.userData.fogDensityBase = 0.0015;
+    scene.fog = new THREE.FogExp2(0x5a6b80, 0.0018);
+    scene.userData.fogDensityBase = 0.0018;
 
     var camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.5, 120);
     camera.position.set(0, 1.6, 5);
@@ -16,7 +16,7 @@ function createScene_fog_highway() {
     var visitCount = (window.App && window.App.visitCounts && window.App.visitCounts.fog_highway) || 0;
     var isRevisit = window.App && window.App.visitedScenes && window.App.visitedScenes.has('fog_highway');
 
-    scene.add(new THREE.AmbientLight(0x7088a0, 0.25));
+    scene.add(new THREE.AmbientLight(0x3a4a5a, 0.30));
     var highwayLight = new THREE.PointLight(0xaaccff, 1.2, 40);
     highwayLight.position.set(0, 8, -30);
     scene.add(highwayLight);
