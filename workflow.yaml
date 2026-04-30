@@ -227,7 +227,6 @@ agents:
     retry: 2
     depends_on:
       - tech-survey-agent
-      - backend-refactor-agent
       - frontend-scaffold-agent
 
   # Wave 3 ───────────────────────────────────────────────────────────────────
@@ -473,19 +472,26 @@ phases:
     parallel: true
     wave: 1
 
-  phase_2_development:
-    description: "Backend refactor + 3D scenes + CSS UI + API layer"
-    agents: [backend-refactor-agent, threejs-scene-agent, css-ui-agent, api-layer-agent]
+  phase_2a_core_development:
+    description: "Backend refactor + 3D scenes + CSS UI (parallel)"
+    agents: [backend-refactor-agent, threejs-scene-agent, css-ui-agent]
     parallel: true
     wave: 2
     depends_on: [phase_1_research]
+
+  phase_2b_api_layer:
+    description: "API communication layer (sequential — depends on backend from 2a)"
+    agents: [api-layer-agent]
+    parallel: false
+    wave: 2
+    depends_on: [phase_2a_core_development]
 
   phase_3_qa:
     description: "Automated quality assurance"
     agents: [qa-integration-agent]
     parallel: false
     wave: 3
-    depends_on: [phase_2_development]
+    depends_on: [phase_2b_api_layer]
 
   phase_4_publish:
     description: "Documentation and git push"
