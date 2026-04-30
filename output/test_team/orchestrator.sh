@@ -12,6 +12,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Convert Git Bash /c/Users to C:/Users for Python open() compatibility
+SCRIPT_DIR="$(cygpath -m "$SCRIPT_DIR" 2>/dev/null || echo "$SCRIPT_DIR")"
 CONFIG_FILE="${SCRIPT_DIR}/config.json"
 CACHE_DIR="${SCRIPT_DIR}/.test_team_cache"
 REPORTS_DIR="${SCRIPT_DIR}/reports"
@@ -146,7 +148,7 @@ else:
 # ── 主流程 ─────────────────────────────────────────────────────────────────
 main() {
   local MODE="${1:-full_cycle}"
-  local AUTO_COMMIT="false"
+  local AUTO_COMMIT="False"
   local MAX_CYCLES="5"
 
   # 解析參數

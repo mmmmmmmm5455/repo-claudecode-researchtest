@@ -8,6 +8,10 @@ logs/
 *.tmp
 output/docs-publish-agent/
 output/quality_report.json
+output/*-agent/
+output/test_team/playwright/
+output/test_team/test-results/
+output/video-script-extractor/
 .env
 *.db
 *.sqlite

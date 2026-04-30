@@ -1,5 +1,11 @@
 # Multi-Agent System for Autonomous Game Development Pipeline Research
 
+> **STATUS: Future Research Phase — NOT the current implementation.**
+> This document describes a planned 15-agent Godot 4.x + GDExtension research project.
+> The actual implemented project is an 8-agent FastAPI + Three.js Y2K web frontend, defined
+> in `workflow.yaml` and built in `output/`. See `workflow.yaml` and `README.md` for
+> the current architecture.
+
 ## Part A: Master Plan
 
 **Project**: Can LLM-based Agents Autonomously Complete the Full Game Development Pipeline — from Requirements to Playable Prototype?
