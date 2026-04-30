@@ -17,7 +17,22 @@
 
   var _timer = null;
   var _infectionLevel = 0;
-  var _glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  var _zalgoMarks = [
+    '̀', '́', '̂', '̃', '̄', '̅', '̆', '̇', '̈',
+    '̉', '̊', '̋', '̌', '̍', '̎', '̏',
+    '̐', '̑', '̒', '̓', '̔', '̕', '̖', '̗', '̘',
+    '̙', '̚', '̛', '̜', '̝', '̞', '̟',
+    '̠', '̡', '̢', '̣', '̤', '̥', '̦', '̧', '̨',
+    '̩', '̪', '̫', '̬', '̭', '̮', '̯',
+    '̰', '̱', '̲', '̳', '̴', '̵', '̶', '̷', '̸',
+    '̹', '̺', '̻', '̼', '̽', '̾', '̿',
+    '̀', '́', '͂', '̓', '̈́', 'ͅ', '͆', '͇', '͈',
+    '͉', '͊', '͋', '͌', '͍', '͎', '͏',
+    '͐', '͑', '͒', '͓', '͔', '͕', '͖', '͗', '͘',
+    '͙', '͚', '͛', '͜', '͝', '͞', '͟',
+    '͠', '͡', '͢', 'ͣ', 'ͤ', 'ͥ', 'ͦ', 'ͧ', 'ͨ',
+    'ͩ', 'ͪ', 'ͫ', 'ͬ', 'ͭ', 'ͮ', 'ͯ'
+  ];
 
   function setInfectionLevel(level) {
     _infectionLevel = Math.min(100, Math.max(0, level | 0));
@@ -33,14 +48,19 @@
 
   function glitchText(text) {
     if (_infectionLevel <= 70 || !text) return text;
-    var ratio = 0.15 + (_infectionLevel - 70) / 30 * 0.15;
-    var chars = Array.from(text);
-    for (var i = 0; i < chars.length; i++) {
-      if (Math.random() < ratio && chars[i] !== '\n' && chars[i] !== ' ') {
-        chars[i] = _glitchChars[Math.floor(Math.random() * _glitchChars.length)];
+    var rate = 0.05 + (Math.min(95, _infectionLevel) - 70) / 25 * 0.25;
+    var result = '';
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      result += ch;
+      if (/[a-zA-Z]/.test(ch) && Math.random() < rate) {
+        var count = 1 + Math.floor(Math.random() * 3);
+        for (var j = 0; j < count; j++) {
+          result += _zalgoMarks[Math.floor(Math.random() * _zalgoMarks.length)];
+        }
       }
     }
-    return chars.join('');
+    return result;
   }
 
   function cancelTypewriter() {
