@@ -210,15 +210,17 @@
     }
 
     if (data.scene_trigger && data.scene_trigger !== currentScene) {
-      window.App.visitedScenes.add(data.scene_trigger);
-      window.App.visitCounts[data.scene_trigger] = (window.App.visitCounts[data.scene_trigger] || 0) + 1;
       currentScene = data.scene_trigger;
+      var switched = true;
       if (typeof BackgroundManager !== 'undefined') {
         BackgroundManager.switchScene(data.scene_trigger);
       }
       if (typeof AudioManager !== 'undefined') {
         AudioManager.switchScene(data.scene_trigger);
       }
+      // Update visit tracking AFTER successful scene switch
+      window.App.visitedScenes.add(data.scene_trigger);
+      window.App.visitCounts[data.scene_trigger] = (window.App.visitCounts[data.scene_trigger] || 0) + 1;
       updateLocationDisplay(data.scene_trigger);
     }
     if (data.system_event) {

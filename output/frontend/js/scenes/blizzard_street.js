@@ -29,10 +29,23 @@ function createScene_blizzard_street() {
     streetLight.position.set(-4, 4, -5);
     scene.add(streetLight);
 
-    // H10: Emergency blinking light fixture (visible when infection > 50 + revisit)
-    var alarmBlinkActive = (isRevisit && infected > 50);
-    var alarmBlinkTimer = 0;
-    var alarmBlinkInterval = 1 + Math.random() * 2;
+    // H10: Emergency blinking light fixture via setTimeout scheduling
+    var alarmBlinkAlive = true;
+
+    function scheduleAlarmBlink() {
+        if (!alarmBlinkAlive) return;
+        var delay = 1000 + Math.random() * 2000;
+        setTimeout(function () {
+            if (!alarmBlinkAlive) return;
+            var blink = scene.getObjectByName('hook_emergency_blink');
+            if (blink && blink.material) {
+                blink.material.opacity = blink.material.opacity > 0.5 ? 0.05 : 0.9;
+                blink.material.transparent = true;
+            }
+            scheduleAlarmBlink();
+        }, delay);
+    }
+    if (isRevisit && infected > 50) scheduleAlarmBlink();
 
     // Snow-covered ground
     var groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1820, roughness: 0.9, flatShading: true });
@@ -63,7 +76,7 @@ function createScene_blizzard_street() {
     scene.add(alarm);
 
     // H10: Emergency alarm blinking overlay (small emissive plane on building)
-    if (alarmBlinkActive) {
+    if (isRevisit && infected > 50) {
         var blinkGeo = new THREE.PlaneGeometry(0.3, 0.3);
         var blinkMat = new THREE.MeshBasicMaterial({ color: 0x00bcd4 });
         var blinkPlane = new THREE.Mesh(blinkGeo, blinkMat);
@@ -128,19 +141,8 @@ function createScene_blizzard_street() {
         }
         grain.geometry.attributes.position.needsUpdate = true;
 
-        // H10: Emergency blink — fixed interval instead of random
-        if (alarmBlinkActive) {
-            alarmBlinkTimer += dt;
-            if (alarmBlinkTimer >= alarmBlinkInterval) {
-                alarmBlinkTimer = 0;
-                alarmBlinkInterval = 1 + Math.random() * 2;
-                var blink = scene.getObjectByName('hook_emergency_blink');
-                if (blink && blink.material) {
-                    blink.material.opacity = blink.material.opacity > 0.5 ? 0.05 : 0.9;
-                    blink.material.transparent = true;
-                }
-            }
-        } else {
+        // H10: Emergency light gentle flicker (random, not per-frame scheduled)
+        if (!alarmBlinkAlive) {
             emergencyLight.intensity = 0.6 + Math.random() * 0.3;
         }
         camera.position.x = Math.sin(elapsed * 0.4) * 0.1;
@@ -148,6 +150,7 @@ function createScene_blizzard_street() {
     }
 
     function dispose() {
+        alarmBlinkAlive = false;
         scene.traverse(function(obj) {
             if (obj.geometry) obj.geometry.dispose();
             if (obj.material) obj.material.dispose();

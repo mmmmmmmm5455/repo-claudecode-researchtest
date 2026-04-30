@@ -136,15 +136,32 @@ var BackgroundManager = (function () {
       currentSceneObj.animate(clock.getDelta(), elapsed);
     }
     // P2-FOG-01: procedural fog density random walk ±15%, update every 3-5s
+    // H8: Dynamic infection-gated fog boost/revert on fog_highway
     fogDensityTimer += clock.getDelta();
     if (fogDensityTimer >= fogDensityInterval && currentSceneObj && currentSceneObj.scene && currentSceneObj.scene.fog) {
       fogDensityTimer = 0;
       fogDensityInterval = 3 + Math.random() * 2;
       if (currentSceneObj.scene.fog.density !== undefined) {
-        var baseDensity = currentSceneObj.scene.userData.fogDensityBase || currentSceneObj.scene.fog.density;
+        var originalBase = currentSceneObj.scene.userData._originalFogDensityBase;
+        var baseDensity = (originalBase !== undefined) ? originalBase
+          : (currentSceneObj.scene.userData.fogDensityBase || currentSceneObj.scene.fog.density);
+        if (originalBase === undefined) {
+          currentSceneObj.scene.userData._originalFogDensityBase = baseDensity;
+        }
         currentSceneObj.scene.userData.fogDensityBase = baseDensity;
         fogDensityVariation = (Math.random() - 0.5) * 0.30;
-        currentSceneObj.scene.fog.density = baseDensity * (1.0 + fogDensityVariation);
+
+        // H8: Check infection for boost/revert
+        var effectiveBase = baseDensity;
+        if (currentSceneName === 'fog_highway') {
+          var infected = (typeof window !== 'undefined' && window.App && window.App.infectionLevel) || 0;
+          var visited = (typeof window !== 'undefined' && window.App && window.App.visitedScenes &&
+            window.App.visitedScenes.has('fog_highway'));
+          if (infected > 60 && visited) {
+            effectiveBase = baseDensity * 1.4;
+          }
+        }
+        currentSceneObj.scene.fog.density = effectiveBase * (1.0 + fogDensityVariation);
       }
     }
     // Update PS1 vertex wobble time on all scene materials
@@ -187,16 +204,11 @@ var BackgroundManager = (function () {
         injectVertexWobble(currentSceneObj.scene);
         setNearestFiltering(currentSceneObj.scene);
 
-        // H8: Fog density +40% when infection > 60 and fog_highway revisited
+        // H8: Preserve immutable original fog density for dynamic boost/revert
         if (sceneName === 'fog_highway' && currentSceneObj.scene && currentSceneObj.scene.fog &&
             currentSceneObj.scene.fog.density !== undefined) {
-          var infected = (typeof window !== 'undefined' && window.App && window.App.infectionLevel) || 0;
-          var visited = (typeof window !== 'undefined' && window.App && window.App.visitedScenes &&
-            window.App.visitedScenes.has('fog_highway'));
-          if (infected > 60 && visited) {
-            var boosted = currentSceneObj.scene.userData.fogDensityBase * 1.4;
-            currentSceneObj.scene.fog.density = boosted;
-            currentSceneObj.scene.userData.fogDensityBase = boosted;
+          if (currentSceneObj.scene.userData.fogDensityBase !== undefined) {
+            currentSceneObj.scene.userData._originalFogDensityBase = currentSceneObj.scene.userData.fogDensityBase;
           }
         }
       } catch (e) {

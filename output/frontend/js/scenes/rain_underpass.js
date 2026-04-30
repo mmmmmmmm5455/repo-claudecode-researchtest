@@ -100,9 +100,20 @@ function createScene_rain_underpass() {
     var rain = new THREE.Points(rainGeo, rainMat);
     scene.add(rain);
 
-    // H3: Fluorescent flicker timer (3rd+ visit)
-    var flickerActive = (visitCount >= 3);
-    var flickerTimer = 0;
+    // H3: Fluorescent flicker via setTimeout scheduling (3rd+ visit)
+    var flickerAlive = true;
+
+    function scheduleFlicker() {
+        if (!flickerAlive) return;
+        var delay = 10000 + Math.random() * 20000;
+        setTimeout(function () {
+            if (!flickerAlive) return;
+            fluorescent.intensity = 0;
+            setTimeout(function () { if (flickerAlive && fluorescent) fluorescent.intensity = 0.4; }, 32);
+            scheduleFlicker();
+        }, delay);
+    }
+    if (visitCount >= 3) scheduleFlicker();
 
     function animate(dt, elapsed) {
         var pos = rain.geometry.attributes.position.array;
@@ -116,16 +127,6 @@ function createScene_rain_underpass() {
         }
         rain.geometry.attributes.position.needsUpdate = true;
         camera.position.x = Math.sin(elapsed * 0.3) * 0.08;
-
-        // H3: Random fluorescent flicker (~every 10-30s, 1-frame off)
-        if (flickerActive) {
-            flickerTimer += dt;
-            if (flickerTimer > 10 + Math.random() * 20) {
-                flickerTimer = 0;
-                fluorescent.intensity = 0;
-                setTimeout(function () { if (fluorescent) fluorescent.intensity = 0.4; }, 32);
-            }
-        }
     }
 
     function dispose() {

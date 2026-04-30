@@ -111,9 +111,26 @@ function createScene_fog_highway() {
     var fogParticles = new THREE.Points(fogGeo, fogMat);
     scene.add(fogParticles);
 
-    // H7 hazard light blink timer
-    var hazardBlink = 0;
-    var hasWreck = (isRevisit && visitCount >= 2);
+    // H7: Hazard light blink via setTimeout scheduling
+    var wreckAlive = true;
+
+    function scheduleBlink() {
+        if (!wreckAlive) return;
+        var delay = 1000 + Math.random() * 2000;
+        setTimeout(function () {
+            if (!wreckAlive) return;
+            var wreck = scene.getObjectByName('hook_car_wreck');
+            if (wreck) {
+                var hl = wreck.children[2];
+                if (hl && hl.material) {
+                    hl.material.opacity = hl.material.opacity > 0.5 ? 0.1 : 0.8;
+                    hl.material.transparent = true;
+                }
+            }
+            scheduleBlink();
+        }, delay);
+    }
+    if (isRevisit && visitCount >= 2) scheduleBlink();
 
     function animate(dt, elapsed) {
         var pos = fogParticles.geometry.attributes.position.array;
@@ -128,23 +145,10 @@ function createScene_fog_highway() {
         fogParticles.geometry.attributes.position.needsUpdate = true;
         camera.position.x = Math.sin(elapsed * 0.2) * 0.12;
         camera.position.y = 1.6 + Math.sin(elapsed * 0.4) * 0.06;
-
-        // H7: Hazard light blink (1-3s irregular)
-        if (hasWreck) {
-            hazardBlink += dt;
-            var wreck = scene.getObjectByName('hook_car_wreck');
-            if (wreck && hazardBlink > 1 + Math.random() * 2) {
-                hazardBlink = 0;
-                var hl = wreck.children[2]; // hazard light sphere
-                if (hl && hl.material) {
-                    hl.material.opacity = hl.material.opacity > 0.5 ? 0.1 : 0.8;
-                    hl.material.transparent = true;
-                }
-            }
-        }
     }
 
     function dispose() {
+        wreckAlive = false;
         scene.traverse(function(obj) {
             if (obj.geometry) obj.geometry.dispose();
             if (obj.material) obj.material.dispose();
