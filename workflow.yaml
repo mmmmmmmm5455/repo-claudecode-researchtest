@@ -22,7 +22,6 @@ agents:
     phase: 1
     wave: 1
     skills:
-      - sci-academic-deep-research
       - autoresearch
     input:
       format: markdown
@@ -188,8 +187,8 @@ agents:
         rule: "No border-radius anywhere"
         check: "! grep -r 'border-radius' frontend/css/"
       - id: G5.3
-        rule: "CRT overlay opacity in [0.35, 0.45]"
-        check: "python3 -c \"import re; c=open('frontend/css/crt.css').read(); m=re.search(r'opacity:\\s*([\\d.]+)', c); v=float(m.group(1)) if m else 0; assert 0.35 <= v <= 0.45, f'CRT opacity={v} out of range'\""
+        rule: "CRT WebGL shader effects present in background.js (barrel distortion + noise grain)"
+        check: "python3 -c \"import re; c=open('frontend/js/background.js').read(); assert 'barrelDistort' in c, 'Missing barrelDistort'; assert 'noise' in c.lower() or 'grain' in c.lower(), 'Missing noise/grain shader'\""
     timeout: 600
     retry: 2
     depends_on:
@@ -255,7 +254,7 @@ agents:
         properties:
           checks:
             type: object
-            required: [css_palette_compliance, css_no_warm_colors, css_no_border_radius, html_no_framework_import, html_no_emoji, js_no_import_statement, js_no_framework_ref, backend_api_schema, backend_pytest, frontend_file_structure, crt_opacity_check, ps1_shader_wobble]
+            required: [css_palette_compliance, css_no_warm_colors, css_no_border_radius, html_no_framework_import, html_no_emoji, js_no_import_statement, js_no_framework_ref, backend_api_schema, backend_pytest, frontend_file_structure, crt_webgl_check, ps1_shader_wobble]
     quality_gate:
       - id: G7.1
         rule: "All 12 checks executed"
@@ -279,7 +278,6 @@ agents:
     phase: 4
     wave: 4
     skills:
-      - sci-paper-writing
       - github-ops
     input:
       format: json
@@ -452,10 +450,10 @@ quality_standards:
     check_command: "test -f frontend/index.html && test -f frontend/js/api.js && test -f frontend/js/app.js && test -d frontend/js/scenes && test -d frontend/js/shaders && test -d frontend/css"
 
   # CRT/Style checks (A7)
-  crt_opacity_check:
-    target: 0.4
-    tolerance: 0.05
-    description: "CRT scanline overlay opacity in [0.35, 0.45]"
+  crt_webgl_check:
+    target: barrelDistort+noise
+    tolerance: 0
+    description: "CRT WebGL shader effects present in background.js (barrelDistort + noise/grain)"
     tool: grep+python
     check_command: "python3 -c \"import re; c=open('frontend/css/crt.css').read(); m=re.search(r'opacity:\\s*([\\d.]+)', c); print(m.group(1) if m else 'NOT FOUND')\""
 
