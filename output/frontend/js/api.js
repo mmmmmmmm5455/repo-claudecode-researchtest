@@ -5,48 +5,48 @@
 (function () {
   'use strict';
 
-  var BASE = '';
+  const BASE = '';
 
   async function sendAction(sessionId, playerInput) {
-    var res = await fetch(BASE + '/api/game/action', {
+    const res = await fetch(BASE + '/api/game/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session_id: sessionId, player_input: playerInput }),
     });
     if (!res.ok) {
-      var detail = '';
-      try { var e = await res.json(); detail = e.detail || ''; } catch (_) {}
+      let detail = '';
+      try { const e = await res.json(); detail = e.detail || ''; } catch (_) {}
       throw new Error(detail || 'API error ' + res.status);
     }
     return res.json();
   }
 
   async function newSession() {
-    var res = await fetch(BASE + '/api/game/new', { method: 'POST' });
+    const res = await fetch(BASE + '/api/game/new', { method: 'POST' });
     if (!res.ok) throw new Error('New session error ' + res.status);
     return res.json();
   }
 
   async function getGameState(sessionId) {
-    var res = await fetch(BASE + '/api/game/state?session_id=' + encodeURIComponent(sessionId));
+    const res = await fetch(BASE + '/api/game/state?session_id=' + encodeURIComponent(sessionId));
     if (!res.ok) {
-      var detail = '';
-      try { var e = await res.json(); detail = e.detail || ''; } catch (_) {}
+      let detail = '';
+      try { const e = await res.json(); detail = e.detail || ''; } catch (_) {}
       throw new Error(detail || 'State fetch error ' + res.status);
     }
     return res.json();
   }
 
   function connectWebSocket(sessionId, playerInput, callbacks) {
-    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    var ws = new WebSocket(proto + '//' + location.host + '/ws/game');
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(proto + '//' + location.host + '/ws/game');
 
     ws.onopen = function () {
       ws.send(JSON.stringify({ session_id: sessionId, player_input: playerInput }));
     };
 
     ws.onmessage = function (ev) {
-      var data;
+      let data;
       try { data = JSON.parse(ev.data); } catch (_) { return; }
       if (data.type === 'token' && callbacks.onToken) {
         callbacks.onToken(data.content);
