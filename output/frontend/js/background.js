@@ -179,10 +179,24 @@ var BackgroundManager = (function () {
     currentSceneName = sceneName;
     var createFn = window['createScene_' + sceneName];
     if (typeof createFn === 'function') {
-      currentSceneObj = createFn();
-      if (currentSceneObj && currentSceneObj.scene) {
+      try {
+        currentSceneObj = createFn();
+        if (!currentSceneObj || !currentSceneObj.scene) {
+          throw new Error('Scene factory returned null or missing scene for ' + sceneName);
+        }
         injectVertexWobble(currentSceneObj.scene);
         setNearestFiltering(currentSceneObj.scene);
+      } catch (e) {
+        console.error('Scene load failed for ' + sceneName + ', falling back to fog_highway:', e);
+        currentSceneName = 'fog_highway';
+        var fallbackFn = window['createScene_fog_highway'];
+        if (typeof fallbackFn === 'function') {
+          currentSceneObj = fallbackFn();
+          if (currentSceneObj && currentSceneObj.scene) {
+            injectVertexWobble(currentSceneObj.scene);
+            setNearestFiltering(currentSceneObj.scene);
+          }
+        }
       }
     }
     transitionActive = true;
@@ -237,6 +251,19 @@ var BackgroundManager = (function () {
   }
 
   function getCurrentScene() { return currentSceneName; }
+  function setCrtIntensity(v) {
+    if (screenMaterial && screenMaterial.uniforms) {
+      screenMaterial.uniforms.uCrtIntensity.value = Math.max(0, Math.min(1, v));
+    }
+  }
 
-  return { start: start, switchScene: switchScene, getCurrentScene: getCurrentScene };
+  function toggleCrt() {
+    if (!screenMaterial || !screenMaterial.uniforms) return 0;
+    var cur = screenMaterial.uniforms.uCrtIntensity.value;
+    var next = cur > 0.5 ? 0.0 : 1.0;
+    screenMaterial.uniforms.uCrtIntensity.value = next;
+    return next;
+  }
+
+  return { start: start, switchScene: switchScene, getCurrentScene: getCurrentScene, setCrtIntensity: setCrtIntensity, toggleCrt: toggleCrt };
 })();

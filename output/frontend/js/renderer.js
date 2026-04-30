@@ -16,6 +16,32 @@
   'use strict';
 
   var _timer = null;
+  var _infectionLevel = 0;
+  var _glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+  function setInfectionLevel(level) {
+    _infectionLevel = Math.min(100, Math.max(0, level | 0));
+    var dialog = document.getElementById('dialog-panel');
+    if (dialog) {
+      if (_infectionLevel > 70) {
+        dialog.classList.add('dialog-jitter');
+      } else {
+        dialog.classList.remove('dialog-jitter');
+      }
+    }
+  }
+
+  function glitchText(text) {
+    if (_infectionLevel <= 70 || !text) return text;
+    var ratio = 0.15 + (_infectionLevel - 70) / 30 * 0.15;
+    var chars = Array.from(text);
+    for (var i = 0; i < chars.length; i++) {
+      if (Math.random() < ratio && chars[i] !== '\n' && chars[i] !== ' ') {
+        chars[i] = _glitchChars[Math.floor(Math.random() * _glitchChars.length)];
+      }
+    }
+    return chars.join('');
+  }
 
   function cancelTypewriter() {
     if (_timer !== null) {
@@ -116,5 +142,7 @@
     updateStatusBars: updateStatusBars,
     showSystemDialog: showSystemDialog,
     cancelTypewriter: cancelTypewriter,
+    setInfectionLevel: setInfectionLevel,
+    glitchText: glitchText,
   };
 })();

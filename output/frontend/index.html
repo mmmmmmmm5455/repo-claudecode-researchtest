@@ -17,7 +17,7 @@
   <div id="bg-container"></div>
 
   <div id="top-bar">
-    <div id="viewer-counter" class="seven-segment">01</div>
+    <div id="viewer-counter" class="seven-segment" aria-label="觀看人數">01</div>
     <div id="emotion-bar" class="status-bar">
       <span class="bar-label">EMOTION</span>
       <div class="bar-track">
@@ -30,35 +30,37 @@
         <div class="bar-fill" id="infection-fill"></div>
       </div>
     </div>
-    <div id="fragment-counter" class="seven-segment">00</div>
+    <div id="fragment-counter" class="seven-segment" aria-label="記憶碎片數量">00</div>
   </div>
 
-  <div id="dialog-panel">
+  <div id="dialog-panel" role="log" aria-label="遊戲對話內容" aria-live="polite">
     <div id="dialog-content"></div>
   </div>
 
   <div id="input-panel">
-    <span class="prompt">$</span>
-    <input type="text" id="input-field" placeholder="輸入行動..." autocomplete="off" maxlength="200">
-    <button id="send-button" type="button">發送</button>
+    <span class="prompt" aria-hidden="true">$</span>
+    <input type="text" id="input-field" placeholder="輸入行動..." autocomplete="off" maxlength="200" aria-label="輸入遊戲行動指令">
+    <button id="send-button" type="button" aria-label="發送指令">發送</button>
   </div>
 
   <div id="bottom-bar">
-    <div id="location-display"></div>
+    <div id="location-display" aria-live="polite"></div>
     <div id="attributes-display"></div>
   </div>
 
-  <div id="system-dialog" class="hidden">
+  <div id="system-dialog" class="hidden" role="dialog" aria-label="系統訊息">
     <div id="system-dialog-header"></div>
     <div id="system-dialog-body"></div>
-    <button id="system-dialog-close" type="button">OK</button>
+    <button id="system-dialog-close" type="button" aria-label="關閉系統對話框">OK</button>
   </div>
 
-  <div id="are-you-real-popup" class="hidden">
+  <div id="are-you-real-popup" class="hidden" role="dialog" aria-label="真實性確認">
     <p>are you real?</p>
-    <button id="ayr-yes" type="button">是</button>
-    <button id="ayr-no" type="button">否</button>
+    <button id="ayr-yes" type="button" aria-label="確認是真實的">是</button>
+    <button id="ayr-no" type="button" aria-label="否認是真實的">否</button>
   </div>
+
+  <div class="keyboard-hints" aria-hidden="true">[T] CRT切換 &middot; [M] 靜音切換 &middot; [ESC] 關閉對話框</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="js/scenes/rain_underpass.js"></script>

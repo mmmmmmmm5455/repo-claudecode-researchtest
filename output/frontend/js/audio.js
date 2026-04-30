@@ -1,81 +1,354 @@
-/* audio.js — Web Audio API ambient playback with crossfade (P2-AUDIO-02)
- * Manages AudioContext, GainNode-based crossfade between scene-specific ambient tracks.
- * Placeholder: when P2-AUDIO-01 delivers 4 ambient drone MP3s, load them via fetch+decode.
- * Exports: AudioManager { start, switchScene, getState }
+/* audio.js — Web Audio API ambient drone + environmental sound system
+ * Y2K dark cyan liminal aesthetic: diegetic only, <200Hz dominant, 20% max volume
+ * Programmatic OscillatorNode synthesis — no MP3 dependencies required
+ * Exports: AudioManager { init, switchScene, dispose, setMasterVolume, toggleMute }
  */
 var AudioManager = (function () {
   'use strict';
 
   var ctx = null;
-  var currentGain = null;
-  var nextGain = null;
-  var currentSource = null;
+  var masterGain = null;
   var currentScene = null;
   var crossfadeMs = 3000;
-  var masterGain = null;
-  var ambientPath = 'assets/audio/ambient_';
+  var muted = false;
+  var savedVolume = 0.20;
+
+  // Track active nodes per scene for crossfade cleanup
+  var activeNodes = {};  // { sceneId: { drone: {osc,filter,gain,lfo[]}, env: {src,filter,gain,lfo[]} } }
+
+  // ---- Drone presets (per prompt: all <200Hz dominant) ----
+  var DRONE_PRESETS = {
+    fog_highway:     { freq: 100, wave: 'sawtooth', filtFreq: 180, lfoTarget: 'freq', lfoHz: 0.3, lfoDepth: 8, droneVol: 0.15 },
+    rain_underpass:  { freq: 80,  wave: 'sine',     filtFreq: 200, lfoTarget: null,   lfoHz: 0,   lfoDepth: 0, droneVol: 0.15 },
+    snow_bridge:     { freq: 60,  wave: 'triangle', filtFreq: 150, lfoTarget: 'gain',  lfoHz: 0.2, lfoDepth: 0.03,droneVol: 0.15 },
+    blizzard_street: { freq: 50,  wave: 'square',   filtFreq: 120, lfoTarget: 'filt',  lfoHz: 0.5, lfoDepth: 15, droneVol: 0.15 }
+  };
+
+  // ---- Environmental sound presets ----
+  var ENV_PRESETS = {
+    fog_highway:     { type: 'wind_distant', noise: 'white', filtType: 'bandpass', filtLo: 200, filtHi: 400, envVol: 0.05, continuous: true },
+    rain_underpass:  { type: 'water_drip',   noise: 'white', filtType: 'bandpass', filtLo: 400, filtHi: 1200,envVol: 0.08, continuous: false, intervalMs: [2000, 5000] },
+    snow_bridge:     { type: 'wind_gust',    noise: 'pink',  filtType: 'lowpass',  filtLo: 300, filtHi: 0,   envVol: 0.06, continuous: true,  lfoHz: 0.1, lfoDepth: 0.02 },
+    blizzard_street: { type: 'wind_howl',    noise: 'white', filtType: 'bandpass', filtLo: 150, filtHi: 500, envVol: 0.07, continuous: true,  lfoHz: 0.3, lfoDepth: 0.04 }
+  };
+
+  // ---- Noise buffer cache ----
+  var noiseBufferCache = {};
+
+  function createNoiseBuffer(type) {
+    if (noiseBufferCache[type]) return noiseBufferCache[type];
+    var len = ctx.sampleRate * 2; // 2 seconds
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    if (type === 'pink') {
+      var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (var i = 0; i < len; i++) {
+        var white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+        b6 = white * 0.115926;
+      }
+    } else {
+      for (var i = 0; i < len; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+    }
+    noiseBufferCache[type] = buf;
+    return buf;
+  }
+
+  // ---- Create drone oscillator chain for a scene ----
+  function createDrone(sceneId) {
+    var preset = DRONE_PRESETS[sceneId];
+    if (!preset) return null;
+
+    var osc = ctx.createOscillator();
+    osc.type = preset.wave;
+    osc.frequency.value = preset.freq;
+
+    var lfoNodes = [];
+    if (preset.lfoHz > 0 && preset.lfoTarget) {
+      var lfo = ctx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.value = preset.lfoHz;
+      var lfoGain = ctx.createGain();
+      lfoGain.gain.value = preset.lfoDepth;
+
+      if (preset.lfoTarget === 'freq') {
+        lfo.connect(lfoGain).connect(osc.frequency);
+      } else if (preset.lfoTarget === 'gain') {
+        // lfoGain will connect to droneGain later
+        lfoNodes.push({ osc: lfo, gain: lfoGain, target: 'droneGain' });
+        lfo.connect(lfoGain);
+      } else if (preset.lfoTarget === 'filt') {
+        // lfoGain will connect to filter.frequency later
+        lfoNodes.push({ osc: lfo, gain: lfoGain, target: 'filtFreq' });
+        lfo.connect(lfoGain);
+      }
+      lfo.start(0);
+      lfoNodes.push({ osc: lfo, gain: lfoGain, target: preset.lfoTarget, _started: true });
+    }
+
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = preset.filtFreq;
+    filter.Q.value = 1.0;
+
+    // Connect LFO to filter frequency if that's the target
+    for (var i = 0; i < lfoNodes.length; i++) {
+      if (lfoNodes[i].target === 'filtFreq') {
+        lfoNodes[i].gain.connect(filter.frequency);
+      } else if (lfoNodes[i].target === 'freq') {
+        // already connected to osc.frequency above
+      }
+    }
+
+    var droneGain = ctx.createGain();
+    droneGain.gain.value = 0; // start silent, ramp up
+
+    osc.connect(filter);
+    filter.connect(droneGain);
+    droneGain.connect(masterGain);
+
+    // Connect LFO to droneGain if that's the target
+    for (var i = 0; i < lfoNodes.length; i++) {
+      if (lfoNodes[i].target === 'droneGain') {
+        lfoNodes[i].gain.connect(droneGain.gain);
+      }
+    }
+
+    osc.start(0);
+
+    return { osc: osc, filter: filter, gain: droneGain, lfoNodes: lfoNodes, vol: preset.droneVol };
+  }
+
+  // ---- Create environmental sound chain for a scene ----
+  function createEnvironment(sceneId) {
+    var preset = ENV_PRESETS[sceneId];
+    if (!preset) return null;
+
+    var noiseBuf = createNoiseBuffer(preset.noise);
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuf;
+    src.loop = preset.continuous;
+
+    var filter;
+    if (preset.filtType === 'bandpass') {
+      filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = (preset.filtLo + preset.filtHi) / 2;
+      filter.Q.value = filter.frequency.value / (preset.filtHi - preset.filtLo);
+    } else {
+      filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = preset.filtLo;
+      filter.Q.value = 0.7;
+    }
+
+    var envGain = ctx.createGain();
+    envGain.gain.value = 0; // start silent
+
+    var lfoNodes = [];
+    if (preset.lfoHz && preset.lfoHz > 0) {
+      var lfo = ctx.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.value = preset.lfoHz;
+      var lfoGain = ctx.createGain();
+      lfoGain.gain.value = preset.lfoDepth;
+      lfo.connect(lfoGain);
+      lfoGain.connect(envGain.gain);
+      lfo.start(0);
+      lfoNodes.push({ osc: lfo, gain: lfoGain });
+    }
+
+    src.connect(filter);
+    filter.connect(envGain);
+    envGain.connect(masterGain);
+
+    src.start(0);
+
+    return { src: src, filter: filter, gain: envGain, lfoNodes: lfoNodes, vol: preset.envVol, continuous: preset.continuous };
+  }
+
+  // ---- Rain drip burst: short filtered noise pulses ----
+  function createRainDrips(sceneId) {
+    var preset = ENV_PRESETS[sceneId];
+    var noiseBuf = createNoiseBuffer('white');
+    var active = true;
+
+    function triggerDrip() {
+      if (!active) return;
+      var src = ctx.createBufferSource();
+      src.buffer = noiseBuf;
+
+      var filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 800;
+      filter.Q.value = 2;
+
+      var env = ctx.createGain();
+      env.gain.setValueAtTime(0, ctx.currentTime);
+      env.gain.linearRampToValueAtTime(preset.envVol, ctx.currentTime + 0.02);
+      env.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+
+      src.connect(filter);
+      filter.connect(env);
+      env.connect(masterGain);
+      src.start(ctx.currentTime);
+      src.stop(ctx.currentTime + 0.5);
+
+      // Schedule next drip
+      var next = preset.intervalMs[0] + Math.random() * (preset.intervalMs[1] - preset.intervalMs[0]);
+      if (active) {
+        setTimeout(triggerDrip, next);
+      }
+    }
+
+    triggerDrip();
+
+    return {
+      dispose: function () { active = false; }
+    };
+  }
+
+  // ---- Public API ----
 
   function init() {
     if (ctx) return ctx;
     try {
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       masterGain = ctx.createGain();
-      masterGain.gain.value = 0.25;
+      masterGain.gain.value = muted ? 0 : savedVolume;
       masterGain.connect(ctx.destination);
-    } catch (e) {
-      console.warn('AudioManager: Web Audio API not available');
-    }
-    return ctx;
-  }
 
-  function switchScene(sceneName) {
-    if (!init() || sceneName === currentScene) return;
-    currentScene = sceneName;
-
-    if (currentGain) {
-      currentGain.gain.linearRampToValueAtTime(0, ctx.currentTime + crossfadeMs / 1000);
-      setTimeout(function () {
-        if (currentSource) { try { currentSource.stop(); } catch(e) {} }
-      }, crossfadeMs + 100);
-    }
-
-    nextGain = ctx.createGain();
-    nextGain.gain.value = 0;
-    nextGain.connect(masterGain);
-    nextGain.gain.linearRampToValueAtTime(1.0, ctx.currentTime + crossfadeMs / 1000);
-
-    var url = ambientPath + sceneName + '.mp3';
-    fetch(url)
-      .then(function (resp) {
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return resp.arrayBuffer();
-      })
-      .then(function (buf) { return ctx.decodeAudioData(buf); })
-      .then(function (audioBuffer) {
-        var src = ctx.createBufferSource();
-        src.buffer = audioBuffer;
-        src.loop = true;
-        src.connect(nextGain);
-        src.start(0);
-        if (currentSource) {
-          try { currentSource.stop(ctx.currentTime + crossfadeMs / 1000 + 0.1); } catch(e) {}
+      // Resume on first user interaction (browser autoplay policy)
+      var resumeOnInteract = function () {
+        if (ctx.state === 'suspended') {
+          ctx.resume();
         }
-        currentSource = src;
-        currentGain = nextGain;
-      })
-      .catch(function (err) {
-        console.warn('AudioManager: ambient track not found for ' + sceneName + ' (' + err.message + ')');
-        currentGain = nextGain;
-      });
+        document.removeEventListener('click', resumeOnInteract);
+        document.removeEventListener('keydown', resumeOnInteract);
+        document.removeEventListener('touchstart', resumeOnInteract);
+      };
+      document.addEventListener('click', resumeOnInteract);
+      document.addEventListener('keydown', resumeOnInteract);
+      document.addEventListener('touchstart', resumeOnInteract);
+
+      return ctx;
+    } catch (e) {
+      console.warn('[Audio] Web Audio API not available — running in silent mode');
+      return null;
+    }
   }
 
-  function getState() {
-    return {
-      contextReady: !!ctx,
-      currentScene: currentScene,
-      crossfadeMs: crossfadeMs
-    };
+  function disposeNodes(nodes) {
+    if (!nodes) return;
+    try {
+      if (nodes.drone) {
+        var d = nodes.drone;
+        try { d.osc.stop(); } catch(e) {}
+        for (var i = 0; i < d.lfoNodes.length; i++) {
+          try { d.lfoNodes[i].osc.stop(); } catch(e) {}
+        }
+      }
+      if (nodes.env) {
+        var e = nodes.env;
+        try { e.src.stop(); } catch(e) {}
+        for (var i = 0; i < e.lfoNodes.length; i++) {
+          try { e.lfoNodes[i].osc.stop(); } catch(e) {}
+        }
+      }
+      if (nodes.drips) {
+        try { nodes.drips.dispose(); } catch(e) {}
+      }
+    } catch(e) {
+      console.warn('[Audio] Error disposing nodes:', e);
+    }
   }
 
-  return { init: init, switchScene: switchScene, getState: getState };
+  function switchScene(sceneId) {
+    if (!sceneId || sceneId === currentScene) return;
+    init();
+    if (!ctx) return;
+
+    var oldNodes = activeNodes[currentScene];
+    currentScene = sceneId;
+
+    // Create new scene audio
+    var newDrone = createDrone(sceneId);
+    var newEnv = createEnvironment(sceneId);
+    var newDrips = null;
+    if (sceneId === 'rain_underpass') {
+      newDrips = createRainDrips(sceneId);
+    }
+
+    var newNodes = { drone: newDrone, env: newEnv, drips: newDrips, sceneId: sceneId };
+    activeNodes[sceneId] = newNodes;
+
+    // Ramp in new audio
+    var now = ctx.currentTime;
+    var rampEnd = now + crossfadeMs / 1000;
+
+    if (newDrone) {
+      newDrone.gain.gain.setValueAtTime(0, now);
+      newDrone.gain.gain.linearRampToValueAtTime(newDrone.vol, rampEnd);
+    }
+    if (newEnv) {
+      newEnv.gain.gain.setValueAtTime(0, now);
+      newEnv.gain.gain.linearRampToValueAtTime(newEnv.vol, rampEnd);
+    }
+
+    // Ramp out and dispose old audio
+    if (oldNodes) {
+      if (oldNodes.drone) {
+        oldNodes.drone.gain.gain.linearRampToValueAtTime(0, rampEnd);
+      }
+      if (oldNodes.env) {
+        oldNodes.env.gain.gain.linearRampToValueAtTime(0, rampEnd);
+      }
+      (function (nodes) {
+        setTimeout(function () { disposeNodes(nodes); }, crossfadeMs + 200);
+      })(oldNodes);
+    }
+  }
+
+  function dispose() {
+    var scenes = Object.keys(activeNodes);
+    for (var i = 0; i < scenes.length; i++) {
+      disposeNodes(activeNodes[scenes[i]]);
+    }
+    activeNodes = {};
+    currentScene = null;
+  }
+
+  function setMasterVolume(v) {
+    savedVolume = Math.max(0, Math.min(1, v));
+    if (!muted && masterGain) {
+      masterGain.gain.value = savedVolume;
+    }
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    if (!masterGain) return muted;
+    if (muted) {
+      masterGain.gain.value = 0;
+    } else {
+      masterGain.gain.value = savedVolume;
+    }
+    return muted;
+  }
+
+  return {
+    init: init,
+    switchScene: switchScene,
+    dispose: dispose,
+    setMasterVolume: setMasterVolume,
+    toggleMute: toggleMute
+  };
 })();

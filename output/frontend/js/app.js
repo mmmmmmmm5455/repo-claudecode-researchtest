@@ -60,6 +60,26 @@
     document.getElementById('ayr-no').addEventListener('click', function () {
       window.GameRenderer.showSystemDialog(null);
     });
+
+    // QA-NEW-01: [T] toggles CRT post-processing
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 't' || e.key === 'T') {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (typeof BackgroundManager !== 'undefined' && BackgroundManager.toggleCrt) {
+          BackgroundManager.toggleCrt();
+        }
+      }
+    });
+
+    // QA-NEW-02: [M] toggles audio mute
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'm' || e.key === 'M') {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (typeof AudioManager !== 'undefined' && AudioManager.toggleMute) {
+          AudioManager.toggleMute();
+        }
+      }
+    });
   }
 
   // ---- Send Handler ----
@@ -97,7 +117,8 @@
 
     wsPending = window.GameAPI.connectWebSocket(sessionId, input, {
       onToken: function (token) {
-        dialog.textContent += token;
+        var displayToken = window.GameRenderer.glitchText ? window.GameRenderer.glitchText(token) : token;
+        dialog.textContent += displayToken;
         dialog.scrollTop = dialog.scrollHeight;
       },
       onStateUpdate: function (state) {
@@ -124,7 +145,8 @@
       var data = await window.GameAPI.sendAction(sessionId, input);
       var dialog = document.getElementById('dialog-content');
       if (data.narrative) {
-        dialog.textContent += data.narrative + '\n\n';
+        var displayText = window.GameRenderer.glitchText ? window.GameRenderer.glitchText(data.narrative) : data.narrative;
+        dialog.textContent += displayText + '\n\n';
         dialog.scrollTop = dialog.scrollHeight;
       }
       applyGameResponse(data);
@@ -153,6 +175,9 @@
         data.infection_level != null ? data.infection_level : 0,
         data.memory_fragments != null ? data.memory_fragments : 0
       );
+      if (typeof window.GameRenderer.setInfectionLevel === 'function') {
+        window.GameRenderer.setInfectionLevel(data.infection_level != null ? data.infection_level : 0);
+      }
     }
     if (data.viewer_count !== undefined) {
       window.GameRenderer.updateViewerCounter(data.viewer_count);
