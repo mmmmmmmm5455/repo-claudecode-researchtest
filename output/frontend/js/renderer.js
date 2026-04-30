@@ -110,8 +110,14 @@
     var infFill = document.getElementById('infection-fill');
     var fragEl = document.getElementById('fragment-counter');
 
-    if (emoFill) emoFill.style.width = Math.min(100, Math.max(0, emotion | 0)) + '%';
-    if (infFill) infFill.style.width = Math.min(100, Math.max(0, infection | 0)) + '%';
+    if (emoFill) {
+      emoFill.style.width = Math.min(100, Math.max(0, emotion | 0)) + '%';
+      emoFill.setAttribute('aria-valuenow', Math.min(100, Math.max(0, emotion | 0)));
+    }
+    if (infFill) {
+      infFill.style.width = Math.min(100, Math.max(0, infection | 0)) + '%';
+      infFill.setAttribute('aria-valuenow', Math.min(100, Math.max(0, infection | 0)));
+    }
     if (fragEl) fragEl.textContent = String(Math.min(99, Math.max(0, fragments | 0))).padStart(2, '0');
   }
 

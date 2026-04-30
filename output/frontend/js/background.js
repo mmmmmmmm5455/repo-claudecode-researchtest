@@ -223,6 +223,18 @@ var BackgroundManager = (function () {
           }
         }
       }
+    } else {
+      // BUG-05 fix: fallback when scene factory doesn't exist (script failed to load)
+      console.error('Scene factory missing for ' + sceneName + ', falling back to fog_highway');
+      currentSceneName = 'fog_highway';
+      var fallbackFn = window['createScene_fog_highway'];
+      if (typeof fallbackFn === 'function') {
+        currentSceneObj = fallbackFn();
+        if (currentSceneObj && currentSceneObj.scene) {
+          injectVertexWobble(currentSceneObj.scene);
+          setNearestFiltering(currentSceneObj.scene);
+        }
+      }
     }
     transitionActive = true;
     transitionStart = performance.now();

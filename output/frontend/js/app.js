@@ -17,6 +17,22 @@
   var currentScene = 'fog_highway';
   var wsPending = null;
 
+  // ---- Keybind feedback toast ----
+  function showKeybindFeedback(msg) {
+    var toast = document.createElement('div');
+    toast.textContent = msg;
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
+      + 'background:var(--color-panel-bg);border:1px solid var(--color-cold-cyan);'
+      + 'color:var(--color-cold-cyan);font-family:var(--font-vt323);font-size:16px;'
+      + 'padding:6px 20px;z-index:100;pointer-events:none;';
+    document.body.appendChild(toast);
+    setTimeout(function () {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.4s';
+      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 400);
+    }, 1200);
+  }
+
   // ---- Init ----
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -61,22 +77,24 @@
       window.GameRenderer.showSystemDialog(null);
     });
 
-    // QA-NEW-01: [T] toggles CRT post-processing
+    // QA-NEW-01: [T] toggles CRT post-processing with visual feedback
     document.addEventListener('keydown', function (e) {
       if (e.key === 't' || e.key === 'T') {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         if (typeof BackgroundManager !== 'undefined' && BackgroundManager.toggleCrt) {
-          BackgroundManager.toggleCrt();
+          var state = BackgroundManager.toggleCrt();
+          showKeybindFeedback('CRT ' + (state > 0 ? 'ON' : 'OFF'));
         }
       }
     });
 
-    // QA-NEW-02: [M] toggles audio mute
+    // QA-NEW-02: [M] toggles audio mute with visual feedback
     document.addEventListener('keydown', function (e) {
       if (e.key === 'm' || e.key === 'M') {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         if (typeof AudioManager !== 'undefined' && AudioManager.toggleMute) {
-          AudioManager.toggleMute();
+          var muted = AudioManager.toggleMute();
+          showKeybindFeedback(muted ? 'MUTED' : 'UNMUTED');
         }
       }
     });
@@ -271,6 +289,18 @@
       blizzard_street: '暴雪城市街景'
     };
     locEl.textContent = names[sceneId] || '';
+
+    // P3-A11Y-03: Scene change screen reader announcement
+    var announcer = document.getElementById('sr-announcer');
+    if (!announcer) {
+      announcer = document.createElement('div');
+      announcer.id = 'sr-announcer';
+      announcer.setAttribute('aria-live', 'assertive');
+      announcer.setAttribute('aria-atomic', 'true');
+      announcer.className = 'sr-only';
+      document.body.appendChild(announcer);
+    }
+    announcer.textContent = '場景切換至：' + (names[sceneId] || sceneId);
   }
 
   // ---- Exports ----

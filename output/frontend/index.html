@@ -17,20 +17,20 @@
   <div id="bg-container"></div>
 
   <div id="top-bar">
-    <div id="viewer-counter" class="seven-segment" aria-label="觀看人數">01</div>
+    <div id="viewer-counter" class="seven-segment" aria-label="觀看人數" role="status" aria-live="polite">01</div>
     <div id="emotion-bar" class="status-bar">
       <span class="bar-label">EMOTION</span>
       <div class="bar-track">
-        <div class="bar-fill" id="emotion-fill"></div>
+        <div class="bar-fill" id="emotion-fill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="情緒值"></div>
       </div>
     </div>
     <div id="infection-bar" class="status-bar">
       <span class="bar-label">INFECTION</span>
       <div class="bar-track">
-        <div class="bar-fill" id="infection-fill"></div>
+        <div class="bar-fill" id="infection-fill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="感染程度"></div>
       </div>
     </div>
-    <div id="fragment-counter" class="seven-segment" aria-label="記憶碎片數量">00</div>
+    <div id="fragment-counter" class="seven-segment" aria-label="記憶碎片數量" role="status" aria-live="polite">00</div>
   </div>
 
   <div id="dialog-panel" role="log" aria-label="遊戲對話內容" aria-live="polite">
