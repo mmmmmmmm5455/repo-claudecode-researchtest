@@ -124,6 +124,32 @@ var AudioManager = (function () {
 
     osc.start(0);
 
+    // H6: Dissonant drone layer for snow_bridge (fragments >= 3 + revisited)
+    if (sceneId === 'snow_bridge' && typeof window !== 'undefined' && window.App &&
+        window.App.memoryFragments >= 3 && window.App.visitedScenes &&
+        window.App.visitedScenes.has('snow_bridge')) {
+      var dissonantOsc = ctx.createOscillator();
+      dissonantOsc.type = 'sine';
+      dissonantOsc.frequency.value = 73;
+      var dissonantLfo = ctx.createOscillator();
+      dissonantLfo.type = 'sine';
+      dissonantLfo.frequency.value = 0.13;
+      var dissonantLfoGain = ctx.createGain();
+      dissonantLfoGain.gain.value = 0.015;
+      var dissonantGain = ctx.createGain();
+      dissonantGain.gain.value = 0;
+      dissonantLfo.connect(dissonantLfoGain);
+      dissonantLfoGain.connect(dissonantGain.gain);
+      dissonantOsc.connect(dissonantGain);
+      dissonantGain.connect(masterGain);
+      dissonantOsc.start(0);
+      dissonantLfo.start(0);
+      dissonantGain.gain.setValueAtTime(0, ctx.currentTime);
+      dissonantGain.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 2);
+      lfoNodes.push({ osc: dissonantOsc, gain: dissonantGain, _dissonant: true });
+      lfoNodes.push({ osc: dissonantLfo, gain: dissonantLfoGain, _dissonant: true });
+    }
+
     return { osc: osc, filter: filter, gain: droneGain, lfoNodes: lfoNodes, vol: preset.droneVol };
   }
 
@@ -175,11 +201,15 @@ var AudioManager = (function () {
     return { src: src, filter: filter, gain: envGain, lfoNodes: lfoNodes, vol: preset.envVol, continuous: preset.continuous };
   }
 
-  // ---- Rain drip burst: short filtered noise pulses ----
+  // ---- Rain drip burst: short filtered noise pulses (H2: irregular mode on revisit+infection) ----
   function createRainDrips(sceneId) {
     var preset = ENV_PRESETS[sceneId];
     var noiseBuf = createNoiseBuffer('white');
     var active = true;
+
+    // H2: Irregular drip mode when rain_underpass revisited + infection > 35
+    var irregularDrips = (typeof window !== 'undefined' && window.App && window.App.visitedScenes &&
+      window.App.visitedScenes.has('rain_underpass') && window.App.infectionLevel > 35);
 
     function triggerDrip() {
       if (!active) return;
@@ -202,8 +232,29 @@ var AudioManager = (function () {
       src.start(ctx.currentTime);
       src.stop(ctx.currentTime + 0.5);
 
-      // Schedule next drip
-      var next = preset.intervalMs[0] + Math.random() * (preset.intervalMs[1] - preset.intervalMs[0]);
+      // H2: Double-drip (second pulse 0.3s later, 40% chance in irregular mode)
+      if (irregularDrips && Math.random() < 0.4) {
+        var src2 = ctx.createBufferSource();
+        src2.buffer = noiseBuf;
+        var filter2 = ctx.createBiquadFilter();
+        filter2.type = 'bandpass';
+        filter2.frequency.value = 600;
+        filter2.Q.value = 3;
+        var env2 = ctx.createGain();
+        env2.gain.setValueAtTime(0, ctx.currentTime + 0.3);
+        env2.gain.linearRampToValueAtTime(preset.envVol * 0.6, ctx.currentTime + 0.32);
+        env2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        src2.connect(filter2);
+        filter2.connect(env2);
+        env2.connect(masterGain);
+        src2.start(ctx.currentTime + 0.3);
+        src2.stop(ctx.currentTime + 0.7);
+      }
+
+      // H2: Irregular interval (8-15s vs normal 2-5s)
+      var minMs = irregularDrips ? 8000 : preset.intervalMs[0];
+      var maxMs = irregularDrips ? 15000 : preset.intervalMs[1];
+      var next = minMs + Math.random() * (maxMs - minMs);
       if (active) {
         setTimeout(triggerDrip, next);
       }

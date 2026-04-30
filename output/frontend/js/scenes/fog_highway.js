@@ -1,6 +1,7 @@
 /* Scene 3: Fog Highway — PS1 Liminal Space
  * Gray-white + gray-black, 9500K, -1.8EV, -10% contrast
  * 50m visibility fog, 30% distant opacity
+ * Hooks: H7 (car wreck)
  * Exports via window.createScene_fog_highway
  */
 function createScene_fog_highway() {
@@ -11,6 +12,9 @@ function createScene_fog_highway() {
 
     var camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.5, 120);
     camera.position.set(0, 1.6, 5);
+
+    var visitCount = (window.App && window.App.visitCounts && window.App.visitCounts.fog_highway) || 0;
+    var isRevisit = window.App && window.App.visitedScenes && window.App.visitedScenes.has('fog_highway');
 
     scene.add(new THREE.AmbientLight(0x7088a0, 0.25));
     var highwayLight = new THREE.PointLight(0xaaccff, 1.2, 40);
@@ -65,6 +69,30 @@ function createScene_fog_highway() {
         scene.add(pole2);
     }
 
+    // H7: Abandoned car wreck at fog distance (visit >= 2)
+    if (isRevisit && visitCount >= 2) {
+        var wreckGroup = new THREE.Group();
+        var wreckMat = new THREE.MeshStandardMaterial({ color: 0x1a1c1e, roughness: 0.9, flatShading: true });
+        // Car body
+        var body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.6, 3.5), wreckMat);
+        body.position.y = 0.3;
+        wreckGroup.add(body);
+        // Cabin
+        var cabin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 1.8), wreckMat);
+        cabin.position.set(0, 0.8, -0.2);
+        wreckGroup.add(cabin);
+        // Hazard light (faint cold amber pulse)
+        var hazardGeo = new THREE.SphereGeometry(0.08, 4, 4);
+        var hazardMat = new THREE.MeshBasicMaterial({ color: 0x00bcd4 });
+        var hazardLight = new THREE.Mesh(hazardGeo, hazardMat);
+        hazardLight.position.set(0, 0.6, -1.8);
+        wreckGroup.add(hazardLight);
+        wreckGroup.position.set(3.5, -0.9, -38);
+        wreckGroup.rotation.y = 0.3;
+        wreckGroup.name = 'hook_car_wreck';
+        scene.add(wreckGroup);
+    }
+
     // Fog particles
     var fogCount = 300;
     var fogGeo = new THREE.BufferGeometry();
@@ -83,6 +111,10 @@ function createScene_fog_highway() {
     var fogParticles = new THREE.Points(fogGeo, fogMat);
     scene.add(fogParticles);
 
+    // H7 hazard light blink timer
+    var hazardBlink = 0;
+    var hasWreck = (isRevisit && visitCount >= 2);
+
     function animate(dt, elapsed) {
         var pos = fogParticles.geometry.attributes.position.array;
         for (var i = 0; i < fogCount; i++) {
@@ -96,6 +128,20 @@ function createScene_fog_highway() {
         fogParticles.geometry.attributes.position.needsUpdate = true;
         camera.position.x = Math.sin(elapsed * 0.2) * 0.12;
         camera.position.y = 1.6 + Math.sin(elapsed * 0.4) * 0.06;
+
+        // H7: Hazard light blink (1-3s irregular)
+        if (hasWreck) {
+            hazardBlink += dt;
+            var wreck = scene.getObjectByName('hook_car_wreck');
+            if (wreck && hazardBlink > 1 + Math.random() * 2) {
+                hazardBlink = 0;
+                var hl = wreck.children[2]; // hazard light sphere
+                if (hl && hl.material) {
+                    hl.material.opacity = hl.material.opacity > 0.5 ? 0.1 : 0.8;
+                    hl.material.transparent = true;
+                }
+            }
+        }
     }
 
     function dispose() {

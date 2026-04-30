@@ -186,6 +186,19 @@ var BackgroundManager = (function () {
         }
         injectVertexWobble(currentSceneObj.scene);
         setNearestFiltering(currentSceneObj.scene);
+
+        // H8: Fog density +40% when infection > 60 and fog_highway revisited
+        if (sceneName === 'fog_highway' && currentSceneObj.scene && currentSceneObj.scene.fog &&
+            currentSceneObj.scene.fog.density !== undefined) {
+          var infected = (typeof window !== 'undefined' && window.App && window.App.infectionLevel) || 0;
+          var visited = (typeof window !== 'undefined' && window.App && window.App.visitedScenes &&
+            window.App.visitedScenes.has('fog_highway'));
+          if (infected > 60 && visited) {
+            var boosted = currentSceneObj.scene.userData.fogDensityBase * 1.4;
+            currentSceneObj.scene.fog.density = boosted;
+            currentSceneObj.scene.userData.fogDensityBase = boosted;
+          }
+        }
       } catch (e) {
         console.error('Scene load failed for ' + sceneName + ', falling back to fog_highway:', e);
         currentSceneName = 'fog_highway';

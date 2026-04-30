@@ -1,6 +1,7 @@
 /* Scene 4: Blizzard City Street — PS1 Liminal Space
  * Gray-black + dark red, 10000K, -2.0EV, ISO 3200 film grain 25%
  * 8px snow motion blur, extreme cold atmosphere
+ * Hooks: H9 (streetlight burnout), H10 (emergency blinking light)
  * Exports via window.createScene_blizzard_street
  */
 function createScene_blizzard_street() {
@@ -11,6 +12,10 @@ function createScene_blizzard_street() {
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 100);
     camera.position.set(0, 1.5, 5);
 
+    var visitCount = (window.App && window.App.visitCounts && window.App.visitCounts.blizzard_street) || 0;
+    var infected = (window.App && window.App.infectionLevel) || 0;
+    var isRevisit = window.App && window.App.visitedScenes && window.App.visitedScenes.has('blizzard_street');
+
     scene.add(new THREE.AmbientLight(0x1a1520, 0.12));
 
     // Distant red emergency light
@@ -18,10 +23,16 @@ function createScene_blizzard_street() {
     emergencyLight.position.set(3, 2.5, -10);
     scene.add(emergencyLight);
 
-    // Faint streetlight
-    var streetLight = new THREE.PointLight(0xaaccff, 0.4, 14);
+    // H9: Streetlight — burns out on revisit (visit >= 2)
+    var slIntensity = (isRevisit && visitCount >= 2) ? 0 : 0.4;
+    var streetLight = new THREE.PointLight(0xaaccff, slIntensity, 14);
     streetLight.position.set(-4, 4, -5);
     scene.add(streetLight);
+
+    // H10: Emergency blinking light fixture (visible when infection > 50 + revisit)
+    var alarmBlinkActive = (isRevisit && infected > 50);
+    var alarmBlinkTimer = 0;
+    var alarmBlinkInterval = 1 + Math.random() * 2;
 
     // Snow-covered ground
     var groundMat = new THREE.MeshStandardMaterial({ color: 0x1a1820, roughness: 0.9, flatShading: true });
@@ -50,6 +61,16 @@ function createScene_blizzard_street() {
     var alarm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.15), alarmMat);
     alarm.position.set(5.5, 0.5, -8);
     scene.add(alarm);
+
+    // H10: Emergency alarm blinking overlay (small emissive plane on building)
+    if (alarmBlinkActive) {
+        var blinkGeo = new THREE.PlaneGeometry(0.3, 0.3);
+        var blinkMat = new THREE.MeshBasicMaterial({ color: 0x00bcd4 });
+        var blinkPlane = new THREE.Mesh(blinkGeo, blinkMat);
+        blinkPlane.position.set(3.2, 2.6, -9);
+        blinkPlane.name = 'hook_emergency_blink';
+        scene.add(blinkPlane);
+    }
 
     // Snow particles (8px motion blur via size + velocity)
     var snowCount = 500;
@@ -107,7 +128,21 @@ function createScene_blizzard_street() {
         }
         grain.geometry.attributes.position.needsUpdate = true;
 
-        emergencyLight.intensity = 0.6 + Math.random() * 0.3;
+        // H10: Emergency blink — fixed interval instead of random
+        if (alarmBlinkActive) {
+            alarmBlinkTimer += dt;
+            if (alarmBlinkTimer >= alarmBlinkInterval) {
+                alarmBlinkTimer = 0;
+                alarmBlinkInterval = 1 + Math.random() * 2;
+                var blink = scene.getObjectByName('hook_emergency_blink');
+                if (blink && blink.material) {
+                    blink.material.opacity = blink.material.opacity > 0.5 ? 0.05 : 0.9;
+                    blink.material.transparent = true;
+                }
+            }
+        } else {
+            emergencyLight.intensity = 0.6 + Math.random() * 0.3;
+        }
         camera.position.x = Math.sin(elapsed * 0.4) * 0.1;
         camera.position.y = 1.5 + Math.sin(elapsed * 0.3) * 0.05;
     }

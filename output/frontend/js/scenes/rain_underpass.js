@@ -1,6 +1,7 @@
 /* Scene 1: Rainy Underpass — PS1 Liminal Space
  * Cold gray + dark blue, 10000K, -1.5EV, rain blur 10px, 6x6 pixel blocks
  * Single distant warm window light (the only life sign)
+ * Hooks: H1 (graffiti decal), H3 (fluorescent flicker)
  * Exports via window.createScene_rain_underpass
  */
 function createScene_rain_underpass() {
@@ -16,6 +17,14 @@ function createScene_rain_underpass() {
     var windowLight = new THREE.PointLight(0xffaa44, 0.8, 30);
     windowLight.position.set(0, 3, -25);
     scene.add(windowLight);
+
+    // H3: Fluorescent ceiling light
+    var fluorescent = new THREE.PointLight(0xaaccff, 0.4, 10);
+    fluorescent.position.set(0, 3.5, 2);
+    scene.add(fluorescent);
+
+    var visitCount = (window.App && window.App.visitCounts && window.App.visitCounts.rain_underpass) || 0;
+    var infected = (window.App && window.App.infectionLevel) || 0;
 
     // Floor: cracked concrete
     var floorMat = new THREE.MeshStandardMaterial({ color: 0x2a3540, roughness: 0.95, flatShading: true });
@@ -53,6 +62,26 @@ function createScene_rain_underpass() {
     windowMesh.position.set(1.4, 2.5, -29);
     scene.add(windowMesh);
 
+    // H1: Graffiti decal — "你還在嗎" on right wall (visit >= 2)
+    if (window.App && window.App.visitedScenes && window.App.visitedScenes.has('rain_underpass') && visitCount >= 2) {
+        var canvas = document.createElement('canvas');
+        canvas.width = 512; canvas.height = 128;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'rgba(0,229,255,0.35)';
+        ctx.font = '28px "VT323", "Silkscreen", monospace';
+        ctx.fillText('你還在嗎', 60, 70);
+        var graffitiTex = new THREE.CanvasTexture(canvas);
+        graffitiTex.minFilter = THREE.NearestFilter;
+        graffitiTex.magFilter = THREE.NearestFilter;
+        var graffitiMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(3.5, 0.9),
+            new THREE.MeshBasicMaterial({ map: graffitiTex, transparent: true, depthTest: false, depthWrite: false })
+        );
+        graffitiMesh.position.set(5.8, 1.6, -6);
+        graffitiMesh.name = 'hook_graffiti';
+        scene.add(graffitiMesh);
+    }
+
     // Rain particle system (600 drops)
     var rainCount = 600;
     var rainGeo = new THREE.BufferGeometry();
@@ -71,6 +100,10 @@ function createScene_rain_underpass() {
     var rain = new THREE.Points(rainGeo, rainMat);
     scene.add(rain);
 
+    // H3: Fluorescent flicker timer (3rd+ visit)
+    var flickerActive = (visitCount >= 3);
+    var flickerTimer = 0;
+
     function animate(dt, elapsed) {
         var pos = rain.geometry.attributes.position.array;
         for (var i = 0; i < rainCount; i++) {
@@ -83,12 +116,25 @@ function createScene_rain_underpass() {
         }
         rain.geometry.attributes.position.needsUpdate = true;
         camera.position.x = Math.sin(elapsed * 0.3) * 0.08;
+
+        // H3: Random fluorescent flicker (~every 10-30s, 1-frame off)
+        if (flickerActive) {
+            flickerTimer += dt;
+            if (flickerTimer > 10 + Math.random() * 20) {
+                flickerTimer = 0;
+                fluorescent.intensity = 0;
+                setTimeout(function () { if (fluorescent) fluorescent.intensity = 0.4; }, 32);
+            }
+        }
     }
 
     function dispose() {
         scene.traverse(function(obj) {
             if (obj.geometry) obj.geometry.dispose();
-            if (obj.material) obj.material.dispose();
+            if (obj.material) {
+                if (obj.material.map) obj.material.map.dispose();
+                obj.material.dispose();
+            }
         });
     }
 

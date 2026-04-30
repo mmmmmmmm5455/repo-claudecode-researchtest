@@ -179,10 +179,39 @@
         window.GameRenderer.setInfectionLevel(data.infection_level != null ? data.infection_level : 0);
       }
     }
+    if (data.infection_level !== undefined) {
+      window.App.infectionLevel = data.infection_level;
+    }
+    if (data.memory_fragments !== undefined) {
+      window.App.memoryFragments = data.memory_fragments;
+    }
     if (data.viewer_count !== undefined) {
+      window.App.viewerCount = data.viewer_count;
       window.GameRenderer.updateViewerCounter(data.viewer_count);
     }
+
+    // TRIGGER-01: Viewer #2 connects
+    if (!window.App.viewerBumped && window.App.visitedScenes.size >= 3 && window.App.totalVisits() >= 5) {
+      window.App.viewerBumped = true;
+      window.App.viewerCount = 2;
+      window.GameRenderer.updateViewerCounter(2);
+      window.GameRenderer.showSystemDialog({
+        header: '系統訊息',
+        body: 'Viewer #2 connected.'
+      });
+    }
+
+    // TRIGGER-04: White flash on scene transition (20% chance with fragments >= 5)
+    if (data.scene_trigger && window.App.memoryFragments >= 5 && Math.random() < 0.2) {
+      var flash = document.createElement('div');
+      flash.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;opacity:0.3;z-index:999;pointer-events:none;';
+      document.body.appendChild(flash);
+      setTimeout(function () { if (flash.parentNode) flash.parentNode.removeChild(flash); }, 50);
+    }
+
     if (data.scene_trigger && data.scene_trigger !== currentScene) {
+      window.App.visitedScenes.add(data.scene_trigger);
+      window.App.visitCounts[data.scene_trigger] = (window.App.visitCounts[data.scene_trigger] || 0) + 1;
       currentScene = data.scene_trigger;
       if (typeof BackgroundManager !== 'undefined') {
         BackgroundManager.switchScene(data.scene_trigger);
@@ -215,5 +244,12 @@
     initGame: initGame,
     handleSend: handleSend,
     applyGameResponse: applyGameResponse,
+    visitedScenes: new Set(),
+    visitCounts: {},
+    infectionLevel: 0,
+    memoryFragments: 0,
+    viewerCount: 1,
+    viewerBumped: false,
+    totalVisits: function () { var s = 0; for (var k in this.visitCounts) { s += this.visitCounts[k]; } return s; }
   };
 })();

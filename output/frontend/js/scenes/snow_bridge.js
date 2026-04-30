@@ -2,6 +2,7 @@
  * Warm yellow highlight + pure black, 5500K highlights, -2.5EV
  * 16x16 pixel blocks, 70% dead black (RGB 0-20), 1:20 extreme light ratio
  * Single center streetlight as sole illumination
+ * Hooks: H4 (footprints), H5 (extra lit window)
  * Exports via window.createScene_snow_bridge
  */
 function createScene_snow_bridge() {
@@ -12,6 +13,10 @@ function createScene_snow_bridge() {
 
     var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 150);
     camera.position.set(0, 1.8, 6);
+
+    var visitCount = (window.App && window.App.visitCounts && window.App.visitCounts.snow_bridge) || 0;
+    var infected = (window.App && window.App.infectionLevel) || 0;
+    var isRevisit = window.App && window.App.visitedScenes && window.App.visitedScenes.has('snow_bridge');
 
     // Minimal ambient — 70% dead black requirement
     scene.add(new THREE.AmbientLight(0x000511, 0.05));
@@ -50,6 +55,46 @@ function createScene_snow_bridge() {
         var r2 = new THREE.Mesh(railGeo, poleMat);
         r2.position.set(-3.5, 0.3, z);
         scene.add(r2);
+    }
+
+    // Distant housing block (for H5 window hook)
+    var bldgMat2 = new THREE.MeshStandardMaterial({ color: 0x080810, roughness: 1.0, flatShading: true });
+    var distBuilding = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 1.5), bldgMat2);
+    distBuilding.position.set(5, 0.8, -30);
+    scene.add(distBuilding);
+
+    // Windows on distant housing — 3 always lit, 1 toggled by H5
+    var winLit = new THREE.MeshBasicMaterial({ color: 0x00bcd4 });
+    var winDark = new THREE.MeshBasicMaterial({ color: 0x001111 });
+    var winGeo = new THREE.PlaneGeometry(0.3, 0.4);
+    var windowPositions = [
+        { x: 4.4, y: 2.2, z: -29.2 },
+        { x: 4.8, y: 2.2, z: -29.2 },
+        { x: 5.2, y: 2.2, z: -29.2 },
+        { x: 5.6, y: 3.0, z: -29.2 }  // top floor, far right — dark on first visit
+    ];
+    var fourthWindow = null;
+    for (var wi = 0; wi < windowPositions.length; wi++) {
+        var wp = windowPositions[wi];
+        var isFourth = (wi === 3);
+        var wMat = isFourth ? winDark : winLit;
+        if (isFourth && isRevisit && infected > 40) wMat = winLit; // H5: light it up
+        var wMesh = new THREE.Mesh(winGeo, wMat);
+        wMesh.position.set(wp.x, wp.y, wp.z);
+        scene.add(wMesh);
+        if (isFourth) fourthWindow = wMesh;
+    }
+
+    // H4: Footprints in snow (visit >= 2)
+    if (isRevisit && visitCount >= 2) {
+        var fpMat = new THREE.MeshStandardMaterial({ color: 0x8098b0, roughness: 1.0, flatShading: true });
+        for (var fi = 0; fi < 8; fi++) {
+            var fpGeo = new THREE.CylinderGeometry(0.07, 0.09, 0.02, 6);
+            var fp = new THREE.Mesh(fpGeo, fpMat);
+            fp.position.set(1.8 + fi * 0.35, -0.33, -4 + fi * 0.7);
+            fp.rotation.x = Math.PI * 0.05;
+            scene.add(fp);
+        }
     }
 
     // Snow particles
