@@ -1,0 +1,33 @@
+name: CI — multi-agent-plan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt --quiet 2>/dev/null || true
+          pip install pytest fastapi httpx --quiet 2>/dev/null || true
+      - name: Bash syntax check
+        shell: bash
+        run: bash -n execute.sh
+      - name: Python syntax checks
+        run: |
+          python -c "import py_compile; py_compile.compile('lint_colors.py', doraise=True)"
+          for f in output/backend/game_engine.py output/backend/llm_client.py output/backend/scene_selector.py output/backend/server.py output/backend/state_manager.py output/backend/viewer_counter.py; do
+            python -c "import py_compile; py_compile.compile('$f', doraise=True)"
+          done
+      - name: Run tests
+        working-directory: output/backend
+        run: python -m pytest test_server.py -v --tb=short
